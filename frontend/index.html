@@ -3,123 +3,92 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Prontuário Eletrônico de Enfermagem — Pessoas Trans</title>
+  <title>Prontuário Eletrônico de Enfermagem</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>Prontuário Eletrônico de Enfermagem para Pessoas Trans</h1>
-<p><em>Anamnese, exame físico e acompanhamento integral</em></p>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="menu-icon">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+      </div>
+      
+      <nav>
+        <button class="nav-btn active" onclick="mudarPagina(1)">Página 1</button>
+        <button class="nav-btn" onclick="mudarPagina(2)">Página 2</button>
+        <button class="nav-btn" onclick="mudarPagina(3)">Página 3</button>
+        <button class="nav-btn" onclick="mudarPagina(4)">Página 4</button>
+      </nav>
+    </aside>
 
-<hr>
+    <main class="content">
+      <header class="topbar">
+         <div class="user-info">
+           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0163a1" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+           <span>Usuário</span>
+         </div>
+      </header>
 
-<!-- 1. IDENTIFICAÇÃO -->
-<h2>1. Identificação</h2>
+      <form id="prontuarioForm">
+        
+        <div id="pagina1" class="page active">
+          
+          <div class="card">
+            <h1>Prontuário Eletrônico de Enfermagem para Pessoas Trans</h1>
+            <p><em>Anamnese, exame físico e acompanhamento integral</em></p>
+          </div>
 
-<label>Nome social:</label><br>
-<input type="text" name="nome_social"><br><br>
+          <div class="card">
+            <h2>1. Identificação</h2>
+            <label>Nome social:</label><br>
+            <input type="text" name="nome_social"><br><br>
+            <label>Nome civil (opcional):</label><br>
+            <input type="text" name="nome_civil"><br><br>
+            <label>Pronome:</label><br>
+            <input type="text" name="pronome"><br><br>
+            <label>Identidade de gênero:</label><br>
+            <input type="checkbox" name="identidade" value="mulher_trans"> Mulher trans<br>
+            <input type="checkbox" name="identidade" value="homem_trans"> Homem trans<br>
+            <input type="checkbox" name="identidade" value="nao_binario"> Não-binário<br>
+            <input type="checkbox" name="identidade" value="outro"> Outro<br><br>
+            <label>Idade:</label><br>
+            <input type="number" name="idade"><br><br>
+            <label>Contato:</label><br>
+            <input type="text" name="contato"><br><br>
+            <label>Profissional responsável:</label><br>
+            <input type="text" name="profissional"><br><br>
+            <label>Data da consulta:</label><br>
+            <input type="date" name="data_consulta"><br><br>
+            <label>Data da próxima consulta:</label><br>
+            <input type="date" name="data_proxima_consulta">
+          </div>
 
-<label>Nome civil (opcional):</label><br>
-<input type="text" name="nome_civil"><br><br>
+          <div class="card">
+            <h2>2. Queixa Principal</h2>
+            <textarea name="queixa_principal" rows="4" style="width:100%"></textarea>
+          </div>
 
-<label>Pronome:</label><br>
-<input type="text" name="pronome"><br><br>
+          <div class="card">
+            <h2>3. História da Doença Atual (HDA)</h2>
+            <textarea name="hda" rows="4" style="width:100%"></textarea>
+          </div>
 
-<label>Identidade de gênero:</label><br>
-<input type="checkbox" name="identidade" value="mulher_trans"> Mulher trans<br>
-<input type="checkbox" name="identidade" value="homem_trans"> Homem trans<br>
-<input type="checkbox" name="identidade" value="nao_binario"> Não-binário<br>
-<input type="checkbox" name="identidade" value="outro"> Outro<br><br>
+          <div class="card">
+            <h2>4. História Pessoal e Clínica</h2>
+            <label>Tempo de uso de hormonioterapia:</label><br>
+            <input type="text" name="tempo_hormonio"><br><br>
+            <label>Alergias:</label><br>
+            <input type="text" name="alergias">
+          </div>
+        </div>
 
-<label>Idade:</label><br>
-<input type="number" name="idade"><br><br>
-
-<label>Contato:</label><br>
-<input type="text" name="contato"><br><br>
-
-<label>Profissional responsável:</label><br>
-<input type="text" name="profissional"><br><br>
-
-<label>Data da consulta:</label><br>
-<input type="date" name="data_consulta"><br><br>
-
-<label>Data da próxima consulta:</label><br>
-<input type="date" name="data_proxima_consulta"><br><br>
-
-<hr>
-
-<!-- 2. QUEIXA PRINCIPAL -->
-<h2>2. Queixa Principal</h2>
-
-<textarea name="queixa_principal" rows="4" cols="60"></textarea><br><br>
-
-<hr>
-
-<!-- 3. HISTÓRIA DA DOENÇA ATUAL -->
-<h2>3. História da Doença Atual (HDA)</h2>
-
-<textarea name="hda" rows="4" cols="60"></textarea><br><br>
-
-<hr>
-
-<!-- 4. HISTÓRIA PESSOAL E CLÍNICA -->
-<h2>4. História Pessoal e Clínica</h2>
-
-<label>Tempo de uso de hormonioterapia:</label><br>
-<input type="text" name="tempo_hormonio"><br><br>
-
-<label>Tipo de hormonioterapia:</label><br>
-<input type="checkbox" name="tipo_hormonio" value="estrogenica"> Estrogênica<br>
-<input type="checkbox" name="tipo_hormonio" value="androgenica"> Androgênica<br>
-<input type="checkbox" name="tipo_hormonio" value="bloqueadores"> Bloqueadores hormonais<br>
-<input type="checkbox" name="tipo_hormonio" value="outros"> Outros: <input type="text" name="tipo_hormonio_outros"><br><br>
-
-<label>Via de administração:</label><br>
-<input type="radio" name="via_adm" value="oral"> Oral
-<input type="radio" name="via_adm" value="im"> IM
-<input type="radio" name="via_adm" value="transdermico"> Transdérmica
-<input type="radio" name="via_adm" value="sc"> SC<br><br>
-
-<label>Dose atual:</label><br>
-<input type="text" name="dose_atual"><br><br>
-
-<label>Queixas relacionadas à hormonioterapia:</label><br>
-<input type="checkbox" name="queixas" value="acne"> Acne<br>
-<input type="checkbox" name="queixas" value="queda_cabelo"> Queda de cabelo<br>
-<input type="checkbox" name="queixas" value="retencao_hidrica"> Retenção hídrica<br>
-<input type="checkbox" name="queixas" value="alteracoes_humor"> Alterações de humor<br>
-<input type="checkbox" name="queixas" value="libido"> Libido alterada<br><br>
-
-<label>Cirurgia de redesignação sexual:</label><br>
-<input type="radio" name="cirurgia" value="sim"> Sim — Tipo: <input type="text" name="cirurgia_tipo">
-<input type="radio" name="cirurgia" value="nao"> Não — Intenção futura:
-<input type="radio" name="intencao_cirurgia" value="sim"> Sim
-<input type="radio" name="intencao_cirurgia" value="nao"> Não<br><br>
-
-<label>Procedimentos prévios:</label><br>
-<input type="checkbox" name="procedimentos" value="mastectomia"> Mastectomia<br>
-<input type="checkbox" name="procedimentos" value="mamoplastia"> Mamoplastia<br>
-<input type="checkbox" name="procedimentos" value="histerectomia"> Histerectomia<br>
-<input type="checkbox" name="procedimentos" value="ooforectomia"> Ooforectomia<br>
-<input type="checkbox" name="procedimentos" value="penectomia"> Penectomia<br>
-<input type="checkbox" name="procedimentos" value="vaginoplastia"> Vaginoplastia<br><br>
-
-<label>Doenças associadas:</label><br>
-<input type="checkbox" name="doencas" value="hepatopatia"> Hepatopatia<br>
-<input type="checkbox" name="doencas" value="trombose"> Trombose<br>
-<input type="checkbox" name="doencas" value="hipertensao"> Hipertensão<br>
-<input type="checkbox" name="doencas" value="diabetes"> Diabetes<br>
-<input type="checkbox" name="doencas" value="dislipidemia"> Dislipidemia<br><br>
-
-<label>Histórico familiar:</label><br>
-<input type="text" name="historico_familiar"><br><br>
-
-<label>Alergias:</label><br>
-<input type="text" name="alergias"><br><br>
-
-<hr>
-
-<!-- 5. INVESTIGAÇÃO SEXUAL E REPRODUTIVA -->
-<h2>5. Investigação Sexual e Reprodutiva</h2>
+        <div id="pagina2" class="page">
+          <div class="card">
+            <h2>5. Investigação Sexual e Reprodutiva</h2>
+            <p><em>
 
 <label>Atividade sexual atual:</label><br>
 <input type="radio" name="atividade_sexual" value="sim"> Sim
@@ -159,10 +128,12 @@
 <label>Orientações recebidas:</label><br>
 <input type="text" name="orientacoes_recebidas"><br><br>
 
-<hr>
-
-<!-- 6. MEDICAÇÕES -->
-<h2>6. Uso de Medicações</h2>
+<hr></em></p>
+          </div>
+          
+          <div class="card">
+            <h2>6. Uso de Medicações</h2>
+            <p><em><h2>6. Uso de Medicações</h2>
 <p><em>Classe e tempo de uso — não incluir nomes comerciais</em></p>
 
 <table border="1" cellpadding="6" cellspacing="0">
@@ -207,10 +178,12 @@
   </tbody>
 </table><br>
 
-<hr>
+<hr></em></p>
+          </div>
 
-<!-- 7. AVALIAÇÃO MENTAL E EMOCIONAL -->
-<h2>7. Avaliação Mental e Emocional</h2>
+          <div class="card">
+            <h2>7. Avaliação Mental e Emocional</h2>
+            <p><em>
 
 <table border="1" cellpadding="6" cellspacing="0">
   <thead>
@@ -247,12 +220,12 @@
 <input type="radio" name="ideacao_suicida" value="sim"> Sim
 <input type="radio" name="ideacao_suicida" value="nao"> Não<br><br>
 
-<hr>
+<hr></em></p>
+          </div>
 
-<!-- 8. ENFRENTAMENTOS SOCIAIS -->
-<h2>8. Enfrentamentos Sociais e Contextos de Vulnerabilidade</h2>
-
-<table border="1" cellpadding="6" cellspacing="0">
+          <div class="card">
+            <h2>8. Enfrentamentos Sociais e Contextos de Vulnerabilidade</h2>
+            <p><em><table border="1" cellpadding="6" cellspacing="0">
   <thead>
     <tr>
       <th>Aspecto</th>
@@ -325,12 +298,12 @@
 <input type="checkbox" name="encaminhamento" value="juridico"> Jurídico<br>
 <input type="checkbox" name="encaminhamento" value="outros"> Outros: <input type="text" name="encaminhamento_outros"><br><br>
 
-<hr>
-
-<!-- 9. EXAME FÍSICO -->
-<h2>9. Exame Físico Geral</h2>
-
-<h3>Sinais Vitais</h3>
+<hr></em></p>
+          </div>
+          
+          <div class="card">
+            <h2>9. Exame Físico Geral</h2>
+            <p><em><h3>Sinais Vitais</h3>
 
 <label>PA:</label> <input type="text" name="pa" size="8"> mmHg &nbsp;
 <label>FC:</label> <input type="number" name="fc" size="5"> bpm &nbsp;
@@ -413,12 +386,14 @@
 <input type="radio" name="miccao" value="normal"> Normal
 <input type="radio" name="miccao" value="alterada"> Alterada<br><br>
 
-<hr>
+<hr></em></p>
+          </div>
+        </div>
 
-<!-- 10. PREVENÇÃO DE CÂNCER -->
-<h2>10. Avaliação de Órgãos-Alvo e Prevenção de Câncer</h2>
-
-<table border="1" cellpadding="6" cellspacing="0">
+        <div id="pagina3" class="page">
+          <div class="card">
+            <h2>10. Avaliação de Órgãos-Alvo e Prevenção de Câncer</h2>
+            <p><em><table border="1" cellpadding="6" cellspacing="0">
   <thead>
     <tr>
       <th>Rastreamento / Avaliação</th>
@@ -482,10 +457,12 @@
   </tbody>
 </table><br>
 
-<hr>
+<hr></em></p>
+          </div>
 
-<!-- 11. EXAMES LABORATORIAIS -->
-<h2>11. Exames Laboratoriais Recentes</h2>
+          <div class="card">
+            <h2>11. Exames Laboratoriais Recentes</h2>
+            <p><em>
 
 <table border="1" cellpadding="6" cellspacing="0">
   <thead>
@@ -542,12 +519,12 @@
   </tbody>
 </table><br>
 
-<hr>
+<hr></em></p>
+          </div>
 
-<!-- 12. ACOMPANHAMENTO INTERPROFISSIONAL -->
-<h2>12. Acompanhamento Interprofissional</h2>
-
-<table border="1" cellpadding="6" cellspacing="0">
+          <div class="card">
+            <h2>12. Acompanhamento Interprofissional</h2>
+            <p><em><table border="1" cellpadding="6" cellspacing="0">
   <thead>
     <tr>
       <th>Equipe</th>
@@ -596,10 +573,12 @@
   </tbody>
 </table><br>
 
-<hr>
+<hr></em></p>
+          </div>
 
-<!-- 13. CONDUTA DE ENFERMAGEM -->
-<h2>13. Conduta de Enfermagem</h2>
+          <div class="card">
+            <h2>13. Conduta de Enfermagem</h2>
+            <p><em>
 
 <label>Educação em saúde:</label><br>
 <textarea name="educacao_saude" rows="3" cols="60"></textarea><br><br>
@@ -610,34 +589,38 @@
 <label>Encaminhamentos:</label><br>
 <textarea name="encaminhamentos_conduta" rows="3" cols="60"></textarea><br><br>
 
-<hr>
+<hr></em></p>
+          </div>
+        </div>
 
-<!-- 14. PLANEJAMENTO E ALARMES -->
-<h2>14. Planejamento e Alarmes</h2>
+        <div id="pagina4" class="page">
+          <div class="card">
+            <h2>14. Planejamento e Alarmes</h2>
+            <label>Próxima consulta:</label><br>
+            <input type="date" name="proxima_consulta"><br><br>
+            <p><strong>Alarmes automáticos configuráveis:</strong></p>
+            <ul>
+              <li>Revisão hormonal → a cada 3 meses</li>
+              <li>Avaliação hepática → a cada 6 meses</li>
+              <li>Preventivos → anual</li>
+            </ul>
+          </div>
 
-<label>Próxima consulta:</label><br>
-<input type="date" name="proxima_consulta"><br><br>
+          <div class="card">
+            <h2>15. Observações Finais</h2>
+            <textarea name="observacoes_finais" rows="5" style="width:100%"></textarea>
+          </div>
 
-<p><strong>Alarmes automáticos configuráveis:</strong></p>
-<ul>
-  <li>Revisão hormonal → a cada 3 meses</li>
-  <li>Avaliação hepática → a cada 6 meses</li>
-  <li>Preventivos (mamas, colo, próstata) → anual</li>
-  <li>Acompanhamento emocional e social → conforme necessidade</li>
-  <li>Alerta crítico: risco mental ou social → notificação imediata à equipe</li>
-</ul>
+          <div class="card" style="text-align: right; background-color: transparent; box-shadow: none;">
+            <button type="submit" class="action-btn save-btn">Salvar Prontuário</button>
+            <button type="reset" class="action-btn reset-btn">Limpar Formulário</button>
+          </div>
+        </div>
 
-<hr>
+      </form>
+    </main>
+  </div>
 
-<!-- 15. OBSERVAÇÕES FINAIS -->
-<h2>15. Observações Finais</h2>
-
-<textarea name="observacoes_finais" rows="5" cols="60"></textarea><br><br>
-
-<hr>
-
-<button type="submit">Salvar Prontuário</button>
-<button type="reset">Limpar Formulário</button>
-
+  <script src="script.js"></script>
 </body>
 </html>
