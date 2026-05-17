@@ -20,6 +20,7 @@
   "homepage": "https://github.com/RafaelLP96/AnamneseProject#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
     "express": "^5.2.1"
   },
   "devDependencies": {
