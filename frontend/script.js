@@ -26,3 +26,23 @@ function mudarPagina(numeroPagina) {
   // 5. Rola o conteúdo da tela de volta para o topo a cada troca de página
   document.querySelector('.content').scrollTop = 0;
 }
+
+const form = document.getElementById('prontuarioForm')
+
+form.addEventListener('submit', async(event) => {
+  event.preventDefault()
+  const formData = new FormData(form)
+
+  const dados = Object.fromEntries(formData.entries())
+  console.log(dados)
+
+  const resposta = await fetch('/', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body:JSON.stringify(dados)
+  })
+  const resultado = await resposta.json()
+  console.log(resultado)
+})
