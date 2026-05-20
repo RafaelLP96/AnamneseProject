@@ -1,5 +1,5 @@
 import express from 'express';
-import rotaPublica from './routes/publica'
+import rotaPublica from './routes/publica.js'
 import path from 'path'
 import { fileURLToPath } from 'url';
 
@@ -12,6 +12,6 @@ const __dirname = path.dirname(__nomeArquivo)
 
 app.use(express.static(path.join(__dirname, 'public')))
 
-app.use('/', rotaPublica)
+app.use('/publica', rotaPublica)
 
 app.listen(3000, () => console.log("Servidor online"))

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Prontuário Eletrônico de Enfermagem</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Estilos específicos da tela de login — sem alterar o style.css */
+    .login-wrapper {
+      display: flex;
+      height: 100vh;
+    }
+
+    /* Lado esquerdo: painel azul */
+    .login-sidebar {
+      width: 380px;
+      background-color: #0163a1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    .login-sidebar .logo-icon {
+      margin-bottom: 24px;
+    }
+
+    .login-sidebar h1 {
+      color: #ffffff;
+      font-size: 22px;
+      font-family: Arial, sans-serif;
+      line-height: 1.4;
+    }
+
+    .login-sidebar p {
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 14px;
+      font-family: Arial, sans-serif;
+      margin-top: 10px;
+    }
+
+    .login-sidebar .divider {
+      width: 50px;
+      height: 3px;
+      background-color: #81d994;
+      border-radius: 2px;
+      margin: 20px auto;
+    }
+
+    /* Lado direito: formulário */
+    .login-content {
+      flex: 1;
+      background-color: #e4e4e4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .login-card {
+      background-color: #ffffff;
+      padding: 40px 36px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-card h2 {
+      font-size: 20px;
+      color: #0163a1;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+      font-family: Arial, sans-serif;
+    }
+
+    .login-card label {
+      display: block;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+
+    .login-card input[type="text"],
+    .login-card input[type="password"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-top: 2px;
+      margin-bottom: 18px;
+      width: 100%;
+      max-width: 100%;
+      font-size: 15px;
+      font-family: Arial, sans-serif;
+      box-sizing: border-box;
+    }
+
+    .login-card input:focus {
+      outline: none;
+      border-color: #0163a1;
+      box-shadow: 0 0 0 2px rgba(1, 99, 161, 0.15);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      background-color: #0163a1;
+      color: #ffffff;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 4px;
+    }
+
+    .login-btn:hover {
+      filter: brightness(0.9);
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 18px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .login-footer a {
+      color: #0163a1;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .login-footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Mensagem de erro */
+    .error-msg {
+      background-color: #fdecea;
+      color: #c0392b;
+      border: 1px solid #e74c3c;
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: Arial, sans-serif;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    /* Cadastro (logon) */
+    .register-section {
+      display: none;
+    }
+
+    .tab-link {
+      background: none;
+      border: none;
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 8px 0;
+      color: #999;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-link.active {
+      color: #0163a1;
+      border-bottom: 3px solid #81d994;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-wrapper">
+
+    <!-- Painel Lateral Azul -->
+    <aside class="login-sidebar">
+      <div class="logo-icon">
+        <!-- Ícone de prontuário/saúde -->
+        <svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="72" height="72" rx="16" fill="rgba(255,255,255,0.1)"/>
+          <path d="M24 20h24a4 4 0 0 1 4 4v24a4 4 0 0 1-4 4H24a4 4 0 0 1-4-4V24a4 4 0 0 1 4-4z" stroke="#81d994" stroke-width="2.5" fill="none"/>
+          <line x1="36" y1="29" x2="36" y2="43" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="29" y1="36" x2="43" y2="36" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="27" y1="48" x2="45" y2="48" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <h1>Prontuário Eletrônico<br>de Enfermagem</h1>
+      <div class="divider"></div>
+      <p>Cuidado integral e humanizado<br>para pessoas trans</p>
+    </aside>
+
+    <!-- Área do Formulário -->
+    <main class="login-content">
+      <div class="login-card">
+
+        <!-- Abas Login / Cadastro -->
+        <div class="tabs">
+          <button class="tab-link active" id="tab-login" onclick="mostrarAba('login')">Entrar</button>
+          <button class="tab-link" id="tab-register" onclick="mostrarAba('register')">Cadastrar</button>
+        </div>
+
+        <!-- Mensagem de erro -->
+        <div class="error-msg" id="errorMsg">Usuário ou senha inválidos.</div>
+
+        <!-- ===== FORMULÁRIO DE LOGIN ===== -->
+        <div id="loginSection">
+          <label for="usuario">Usuário (CRM/COREN)</label>
+          <input type="text" id="usuario" placeholder="Ex: COREN-MG 000000" autocomplete="username">
+
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="Digite sua senha" autocomplete="current-password">
+
+          <button class="login-btn" onclick="fazerLogin()">Entrar</button>
+
+          <p class="login-footer">
+            Esqueceu sua senha? <a href="#">Redefinir</a>
+          </p>
+        </div>
+
+        <!-- ===== FORMULÁRIO DE CADASTRO ===== -->
+        <div id="registerSection" class="register-section">
+          <label for="reg-nome">Nome completo</label>
+          <input type="text" id="reg-nome" placeholder="Ex: Ana Silva">
+
+          <label for="reg-usuario">Registro profissional</label>
+          <input type="text" id="reg-usuario" placeholder="Ex: COREN-MG 000000">
+
+          <label for="reg-senha">Senha</label>
+          <input type="password" id="reg-senha" placeholder="Crie uma senha">
+
+          <label for="reg-confirma">Confirmar senha</label>
+          <input type="password" id="reg-confirma" placeholder="Repita a senha">
+
+          <button class="login-btn" onclick="fazerCadastro()">Criar conta</button>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    function mostrarAba(aba) {
+      const loginSection = document.getElementById('loginSection');
+      const registerSection = document.getElementById('registerSection');
+      const tabLogin = document.getElementById('tab-login');
+      const tabRegister = document.getElementById('tab-register');
+      document.getElementById('errorMsg').style.display = 'none';
+
+      if (aba === 'login') {
+        loginSection.style.display = 'block';
+        registerSection.style.display = 'none';
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+      } else {
+        loginSection.style.display = 'none';
+        registerSection.style.display = 'block';
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
+      }
+    }
+
+    function fazerLogin() {
+      const usuario = document.getElementById('usuario').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
+
+      if (!usuario || !senha) {
+        errorMsg.textContent = 'Preencha o usuário e a senha.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      // Simulação de login — substitua pela integração real
+      if (usuario === 'admin' && senha === '1234') {
+        window.location.href = 'index.html';
+      } else {
+        errorMsg.textContent = 'Usuário ou senha inválidos.';
+        errorMsg.style.display = 'block';
+      }
+    }
+
+    function fazerCadastro() {
+      const nome = document.getElementById('reg-nome').value.trim();
+      const usuario = document.getElementById('reg-usuario').value.trim();
+      const senha = document.getElementById('reg-senha').value.trim();
+      const confirma = document.getElementById('reg-confirma').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
+
+      if (!nome || !usuario || !senha || !confirma) {
+        errorMsg.textContent = 'Preencha todos os campos.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      if (senha !== confirma) {
+        errorMsg.textContent = 'As senhas não coincidem.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      // Simulação de cadastro — substitua pela integração real
+      alert('Conta criada com sucesso! Faça login para continuar.');
+      mostrarAba('login');
+    }
+
+    // Login ao pressionar Enter
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const loginVisible = document.getElementById('loginSection').style.display !== 'none';
+        if (loginVisible) fazerLogin();
+        else fazerCadastro();
+      }
+    });
+  </script>
+
+</body>
+</html>

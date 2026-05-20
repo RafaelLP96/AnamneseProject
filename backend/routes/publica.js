@@ -8,7 +8,7 @@ rota.post("/",async(req,res)=> {
     
     try {
         const user = req.body
-        const prontuario = await prisma.prontuario.create({
+        const prontuario = await prisma.prontuarios.create({
             data: {
             nome_social: user.nome_social,
             identidade_genero: user.identidade_genero,
