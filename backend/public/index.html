@@ -261,77 +261,110 @@
 
   <script>
     function mostrarAba(aba) {
-      const loginSection = document.getElementById('loginSection');
-      const registerSection = document.getElementById('registerSection');
-      const tabLogin = document.getElementById('tab-login');
-      const tabRegister = document.getElementById('tab-register');
-      document.getElementById('errorMsg').style.display = 'none';
+    const loginSection = document.getElementById('loginSection');
+    const registerSection = document.getElementById('registerSection');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    document.getElementById('errorMsg').style.display = 'none';
 
-      if (aba === 'login') {
-        loginSection.style.display = 'block';
-        registerSection.style.display = 'none';
-        tabLogin.classList.add('active');
-        tabRegister.classList.remove('active');
-      } else {
-        loginSection.style.display = 'none';
-        registerSection.style.display = 'block';
-        tabLogin.classList.remove('active');
-        tabRegister.classList.add('active');
-      }
+    if (aba === 'login') {
+      loginSection.style.display = 'block';
+      registerSection.style.display = 'none';
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+    } else {
+      loginSection.style.display = 'none';
+      registerSection.style.display = 'block';
+      tabLogin.classList.remove('active');
+      tabRegister.classList.add('active');
+    }
+  }
+
+  function mostrarErro(msg) {
+    const errorMsg = document.getElementById('errorMsg');
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+
+  async function fazerLogin() {
+    const username = document.getElementById('usuario').value.trim();
+    const senha    = document.getElementById('senha').value.trim();
+
+    if (!username || !senha) {
+      mostrarErro('Preencha o usuário e a senha.');
+      return;
     }
 
-    function fazerLogin() {
-      const usuario = document.getElementById('usuario').value.trim();
-      const senha = document.getElementById('senha').value.trim();
-      const errorMsg = document.getElementById('errorMsg');
+    try {
+      const res  = await fetch('/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, senha })
+      });
 
-      if (!usuario || !senha) {
-        errorMsg.textContent = 'Preencha o usuário e a senha.';
-        errorMsg.style.display = 'block';
+      const data = await res.json();
+
+      if (!res.ok) {
+        mostrarErro(data.erro || 'Erro ao fazer login.');
         return;
       }
 
-      // Simulação de login — substitua pela integração real
-      if (usuario === 'admin' && senha === '1234') {
-        window.location.href = 'index.html';
-      } else {
-        errorMsg.textContent = 'Usuário ou senha inválidos.';
-        errorMsg.style.display = 'block';
-      }
+      // Salva o token e redireciona
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('usuario', JSON.stringify(data.usuario));
+      window.location.href = 'formulario.html';
+
+    } catch (err) {
+      mostrarErro('Erro de conexão com o servidor.');
+    }
+  }
+
+  async function fazerCadastro() {
+    const nome     = document.getElementById('reg-nome').value.trim();
+    const username = document.getElementById('reg-usuario').value.trim();
+    const senha    = document.getElementById('reg-senha').value.trim();
+    const confirma = document.getElementById('reg-confirma').value.trim();
+
+    if (!nome || !username || !senha || !confirma) {
+      mostrarErro('Preencha todos os campos.');
+      return;
     }
 
-    function fazerCadastro() {
-      const nome = document.getElementById('reg-nome').value.trim();
-      const usuario = document.getElementById('reg-usuario').value.trim();
-      const senha = document.getElementById('reg-senha').value.trim();
-      const confirma = document.getElementById('reg-confirma').value.trim();
-      const errorMsg = document.getElementById('errorMsg');
+    if (senha !== confirma) {
+      mostrarErro('As senhas não coincidem.');
+      return;
+    }
 
-      if (!nome || !usuario || !senha || !confirma) {
-        errorMsg.textContent = 'Preencha todos os campos.';
-        errorMsg.style.display = 'block';
+    try {
+      const res  = await fetch('/auth/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, username, senha })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        mostrarErro(data.erro || 'Erro ao cadastrar.');
         return;
       }
 
-      if (senha !== confirma) {
-        errorMsg.textContent = 'As senhas não coincidem.';
-        errorMsg.style.display = 'block';
-        return;
-      }
-
-      // Simulação de cadastro — substitua pela integração real
       alert('Conta criada com sucesso! Faça login para continuar.');
       mostrarAba('login');
-    }
 
-    // Login ao pressionar Enter
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') {
-        const loginVisible = document.getElementById('loginSection').style.display !== 'none';
-        if (loginVisible) fazerLogin();
-        else fazerCadastro();
-      }
-    });
+    } catch (err) {
+      mostrarErro('Erro de conexão com o servidor.');
+    }
+  }
+
+  // Login ao pressionar Enter
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      const loginVisible = document.getElementById('loginSection').style.display !== 'none';
+      if (loginVisible) fazerLogin();
+      else fazerCadastro();
+    }
+  });
   </script>
 
 </body>
