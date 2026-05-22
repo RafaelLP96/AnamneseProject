@@ -1,0 +1,148 @@
+/* Reseta margens e define a fonte padrão */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden; /* Evita rolagem na página inteira, a rolagem será apenas no conteúdo */
+}
+
+/* Estrutura Principal Dividida */
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* ================= BARRA LATERAL ================= */
+.sidebar {
+  width: 300px;
+  background-color: #0163a1; /* Azul solicitado */
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ícone Hambúrguer */
+.menu-icon {
+  margin-bottom: 50px;
+  cursor: pointer;
+}
+.menu-icon .bar {
+  width: 30px;
+  height: 3px;
+  background-color: #ffffff;
+  margin: 6px 0;
+  border-radius: 2px;
+}
+
+/* Navegação e Botões */
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espaço entre os botões */
+}
+
+.nav-btn {
+  background-color: #81d994; /* Verde solicitado */
+  color: #000000;
+  border: none;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.nav-btn:hover {
+  filter: brightness(0.9);
+}
+
+.nav-btn.active {
+  box-shadow: inset 0px 0px 8px rgba(0,0,0,0.3);
+  border-left: 5px solid #ffffff; /* Destaque visual na página atual */
+}
+
+
+/* ================= ÁREA DE CONTEÚDO ================= */
+.content {
+  flex: 1;
+  background-color: #e4e4e4; /* Cinza claro solicitado */
+  padding: 20px 40px;
+  overflow-y: auto; /* Permite rolar apenas o lado direito */
+}
+
+/* Cabeçalho do Usuário */
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0163a1; /* Mesma cor do menu */
+  font-weight: bold;
+  font-size: 18px;
+}
+
+/* Cartões Brancos (como na foto de referência) */
+.card {
+  background-color: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.card h1 { font-size: 22px; color: #333; margin-bottom: 5px; }
+.card h2 { font-size: 18px; color: #0163a1; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+
+/* Estilização básica de inputs e tabelas para ficar bonito */
+input[type="text"], input[type="number"], input[type="date"], textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 5px;
+  width: 100%;
+  max-width: 400px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+th { background-color: #f5f5f5; color: #333; }
+
+/* Botões do final do formulário */
+.action-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 10px;
+}
+.save-btn { background-color: #0163a1; color: white; }
+.reset-btn { background-color: #ccc; color: black; }
+
+/* ================= LÓGICA DAS PÁGINAS ================= */
+.page {
+  display: none; /* Esconde todas as páginas por padrão */
+}
+.page.active {
+  display: block; /* Mostra apenas a página com a classe active */
+}

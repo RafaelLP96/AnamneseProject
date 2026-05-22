@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+  
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model prontuarios {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome_social           String
+  identidade_genero     String?
+  data_consulta         DateTime  @db.Date
+  data_proxima_consulta DateTime? @db.Date
+  criado_em             DateTime? @default(now()) @db.Timestamptz(6)
+  atualizado_em         DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+  dados                 Json      @default("{}")
+  registrado_por        String
+  usuarios              usuarios  @relation(fields: [registrado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([dados], map: "idx_prontuarios_dados_gin", type: Gin)
+  @@index([data_consulta], map: "idx_prontuarios_data_consulta")
+  @@index([nome_social], map: "idx_prontuarios_nome_social")
+  @@index([registrado_por], map: "idx_prontuarios_registrado_por")
+}
+
+model usuarios {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nome        String        @db.VarChar(150)
+  username    String        @unique @db.VarChar(50)
+  senha_hash  String
+  ativo       Boolean       @default(true)
+  criado_em   DateTime      @default(now()) @db.Timestamp(6)
+  prontuarios prontuarios[]
+
+  @@index([username], map: "idx_usuarios_username")
+}
