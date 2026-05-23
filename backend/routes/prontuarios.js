@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// POST /prontuarios — cria prontuário (registrado_por vem do token)
+// POST /prontuarios
 router.post('/', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
 
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
         data_consulta:         new Date(data_consulta),
         data_proxima_consulta: data_proxima_consulta ? new Date(data_proxima_consulta) : null,
         dados:                 dados ?? {},
-        registrado_por:        req.usuario.id  // vem do token JWT
+        registrado_por:        req.usuario.id
       }
     });
 
@@ -30,10 +30,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /prontuarios — lista todos os prontuários
+// GET /prontuarios — lista prontuários do usuário logado
 router.get('/', async (req, res) => {
   try {
     const prontuarios = await prisma.prontuarios.findMany({
+      where: { registrado_por: req.usuario.id }, // ✅ filtrado pelo usuário
       orderBy: { data_consulta: 'desc' }
     });
     res.json(prontuarios);
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /prontuarios/:id — busca um prontuário
+// GET /prontuarios/:id
 router.get('/:id', async (req, res) => {
   try {
     const prontuario = await prisma.prontuarios.findUnique({
@@ -57,7 +58,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /prontuarios/:id — atualiza campos
+// PATCH /prontuarios/:id
 router.patch('/:id', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
 
@@ -65,11 +66,11 @@ router.patch('/:id', async (req, res) => {
     const prontuario = await prisma.prontuarios.update({
       where: { id: req.params.id },
       data: {
-        ...(nome_social          && { nome_social }),
-        ...(identidade_genero    && { identidade_genero }),
-        ...(data_consulta        && { data_consulta: new Date(data_consulta) }),
+        ...(nome_social           && { nome_social }),
+        ...(identidade_genero     && { identidade_genero }),
+        ...(data_consulta         && { data_consulta: new Date(data_consulta) }),
         ...(data_proxima_consulta && { data_proxima_consulta: new Date(data_proxima_consulta) }),
-        ...(dados                && { dados })
+        ...(dados                 && { dados })
       }
     });
     res.json(prontuario);
