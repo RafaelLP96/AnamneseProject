@@ -1,7 +1,7 @@
 import express from 'express';
 import multer   from 'multer';
 import { PrismaClient } from '@prisma/client';
-import supabase from '../storage.js';
+import supabase from '../src/storage.js';
 
 const prisma  = new PrismaClient();
 const router  = express.Router();
