@@ -112,12 +112,19 @@ router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
     .from('fotos-prontuarios')
     .upload(caminho, req.file.buffer, { contentType: req.file.mimetype });
 
-  if (error)
-    return res.status(500).json({ erro: 'Erro ao fazer upload' });
+  if (error) {
+    console.error('Supabase upload error:', error);
+    return res.status(500).json({ erro: 'Erro ao fazer upload', detalhes: error.message });
+  }
 
-  const { data } = await supabase.storage
+  const { data, error: signedUrlError } = await supabase.storage
     .from('fotos-prontuarios')
     .createSignedUrl(caminho, 3600);
+
+  if (signedUrlError) {
+    console.error('Supabase signed URL error:', signedUrlError);
+    return res.status(500).json({ erro: 'Erro ao gerar URL de download', detalhes: signedUrlError.message });
+  }
 
   const prontuario = await prisma.prontuarios.findUnique({
     where: { id: req.params.id }
