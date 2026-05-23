@@ -1,4 +1,5 @@
 import express from 'express';
+import supabase from '../storage.js';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
