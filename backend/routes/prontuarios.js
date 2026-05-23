@@ -1,9 +1,11 @@
 import express from 'express';
-import supabase from '../storage.js';
+import multer   from 'multer';
 import { PrismaClient } from '@prisma/client';
+import supabase from '../storage.js';
 
-const prisma = new PrismaClient();
-const router = express.Router();
+const prisma  = new PrismaClient();
+const router  = express.Router();
+const upload  = multer({ storage: multer.memoryStorage() });
 
 // POST /prontuarios
 router.post('/', async (req, res) => {
@@ -35,8 +37,16 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const prontuarios = await prisma.prontuarios.findMany({
-      where: { registrado_por: req.usuario.id }, // ✅ filtrado pelo usuário
-      orderBy: { data_consulta: 'desc' }
+      where: { registrado_por: req.usuario.id },
+      orderBy: { data_consulta: 'desc' },
+      select: {
+        id: true,
+        nome_social: true,
+        identidade_genero: true,
+        data_consulta: true,
+        data_proxima_consulta: true,
+        criado_em: true
+      }
     });
     res.json(prontuarios);
   } catch (err) {
@@ -90,23 +100,13 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-
-
-export default router;
-
-
-import multer   from 'multer';
-import supabase from '../storage.js';
-
-const upload = multer({ storage: multer.memoryStorage() });
-
 // POST /prontuarios/:id/fotos
 router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
   if (!req.file)
     return res.status(400).json({ erro: 'Nenhuma foto enviada' });
 
-  const ext      = req.file.originalname.split('.').pop();
-  const caminho  = `${req.params.id}/${Date.now()}.${ext}`;
+  const ext     = req.file.originalname.split('.').pop();
+  const caminho = `${req.params.id}/${Date.now()}.${ext}`;
 
   const { error } = await supabase.storage
     .from('fotos-prontuarios')
@@ -115,12 +115,10 @@ router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
   if (error)
     return res.status(500).json({ erro: 'Erro ao fazer upload' });
 
-  // Gera URL assinada (válida por 1 hora)
   const { data } = await supabase.storage
     .from('fotos-prontuarios')
     .createSignedUrl(caminho, 3600);
 
-  // Salva o caminho dentro do dados JSONB
   const prontuario = await prisma.prontuarios.findUnique({
     where: { id: req.params.id }
   });
@@ -140,20 +138,26 @@ router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
   res.status(201).json({ url: data.signedUrl, caminho });
 });
 
-// GET /prontuarios/:id/fotos — gera URLs assinadas das fotos
+// GET /prontuarios/:id/fotos
 router.get('/:id/fotos', async (req, res) => {
-  const prontuario = await prisma.prontuarios.findUnique({
-    where: { id: req.params.id }
-  });
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({
+      where: { id: req.params.id }
+    });
 
-  const fotos = prontuario?.dados?.fotos ?? [];
+    const fotos = prontuario?.dados?.fotos ?? [];
 
-  const urls = await Promise.all(fotos.map(async (foto) => {
-    const { data } = await supabase.storage
-      .from('fotos-prontuarios')
-      .createSignedUrl(foto.caminho, 3600);
-    return { ...foto, url: data.signedUrl };
-  }));
+    const urls = await Promise.all(fotos.map(async (foto) => {
+      const { data } = await supabase.storage
+        .from('fotos-prontuarios')
+        .createSignedUrl(foto.caminho, 3600);
+      return { ...foto, url: data.signedUrl };
+    }));
 
-  res.json(urls);
+    res.json(urls);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao buscar fotos' });
+  }
 });
+
+export default router;
