@@ -89,4 +89,70 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+
 export default router;
+
+
+import multer   from 'multer';
+import supabase from '../storage.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+// POST /prontuarios/:id/fotos
+router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
+  if (!req.file)
+    return res.status(400).json({ erro: 'Nenhuma foto enviada' });
+
+  const ext      = req.file.originalname.split('.').pop();
+  const caminho  = `${req.params.id}/${Date.now()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('fotos-prontuarios')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype });
+
+  if (error)
+    return res.status(500).json({ erro: 'Erro ao fazer upload' });
+
+  // Gera URL assinada (válida por 1 hora)
+  const { data } = await supabase.storage
+    .from('fotos-prontuarios')
+    .createSignedUrl(caminho, 3600);
+
+  // Salva o caminho dentro do dados JSONB
+  const prontuario = await prisma.prontuarios.findUnique({
+    where: { id: req.params.id }
+  });
+
+  const fotosAtuais = prontuario.dados?.fotos ?? [];
+
+  await prisma.prontuarios.update({
+    where: { id: req.params.id },
+    data: {
+      dados: {
+        ...prontuario.dados,
+        fotos: [...fotosAtuais, { caminho, descricao: req.body.descricao ?? '' }]
+      }
+    }
+  });
+
+  res.status(201).json({ url: data.signedUrl, caminho });
+});
+
+// GET /prontuarios/:id/fotos — gera URLs assinadas das fotos
+router.get('/:id/fotos', async (req, res) => {
+  const prontuario = await prisma.prontuarios.findUnique({
+    where: { id: req.params.id }
+  });
+
+  const fotos = prontuario?.dados?.fotos ?? [];
+
+  const urls = await Promise.all(fotos.map(async (foto) => {
+    const { data } = await supabase.storage
+      .from('fotos-prontuarios')
+      .createSignedUrl(foto.caminho, 3600);
+    return { ...foto, url: data.signedUrl };
+  }));
+
+  res.json(urls);
+});
