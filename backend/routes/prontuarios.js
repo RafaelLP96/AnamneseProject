@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 const router = express.Router();
 
-// POST /prontuarios — cria prontuário (registrado_por vem do token)
+// POST /prontuarios
 router.post('/', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
 
@@ -19,7 +19,7 @@ router.post('/', async (req, res) => {
         data_consulta:         new Date(data_consulta),
         data_proxima_consulta: data_proxima_consulta ? new Date(data_proxima_consulta) : null,
         dados:                 dados ?? {},
-        registrado_por:        req.usuario.id  // vem do token JWT
+        registrado_por:        req.usuario.id
       }
     });
 
@@ -30,10 +30,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /prontuarios — lista todos os prontuários
+// GET /prontuarios — lista prontuários do usuário logado
 router.get('/', async (req, res) => {
   try {
     const prontuarios = await prisma.prontuarios.findMany({
+      where: { registrado_por: req.usuario.id }, // ✅ filtrado pelo usuário
       orderBy: { data_consulta: 'desc' }
     });
     res.json(prontuarios);
@@ -42,7 +43,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /prontuarios/:id — busca um prontuário
+// GET /prontuarios/:id
 router.get('/:id', async (req, res) => {
   try {
     const prontuario = await prisma.prontuarios.findUnique({
@@ -57,7 +58,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PATCH /prontuarios/:id — atualiza campos
+// PATCH /prontuarios/:id
 router.patch('/:id', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
 
@@ -65,11 +66,11 @@ router.patch('/:id', async (req, res) => {
     const prontuario = await prisma.prontuarios.update({
       where: { id: req.params.id },
       data: {
-        ...(nome_social          && { nome_social }),
-        ...(identidade_genero    && { identidade_genero }),
-        ...(data_consulta        && { data_consulta: new Date(data_consulta) }),
+        ...(nome_social           && { nome_social }),
+        ...(identidade_genero     && { identidade_genero }),
+        ...(data_consulta         && { data_consulta: new Date(data_consulta) }),
         ...(data_proxima_consulta && { data_proxima_consulta: new Date(data_proxima_consulta) }),
-        ...(dados                && { dados })
+        ...(dados                 && { dados })
       }
     });
     res.json(prontuario);
@@ -88,4 +89,70 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+
+
 export default router;
+
+
+import multer   from 'multer';
+import supabase from '../storage.js';
+
+const upload = multer({ storage: multer.memoryStorage() });
+
+// POST /prontuarios/:id/fotos
+router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
+  if (!req.file)
+    return res.status(400).json({ erro: 'Nenhuma foto enviada' });
+
+  const ext      = req.file.originalname.split('.').pop();
+  const caminho  = `${req.params.id}/${Date.now()}.${ext}`;
+
+  const { error } = await supabase.storage
+    .from('fotos-prontuarios')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype });
+
+  if (error)
+    return res.status(500).json({ erro: 'Erro ao fazer upload' });
+
+  // Gera URL assinada (válida por 1 hora)
+  const { data } = await supabase.storage
+    .from('fotos-prontuarios')
+    .createSignedUrl(caminho, 3600);
+
+  // Salva o caminho dentro do dados JSONB
+  const prontuario = await prisma.prontuarios.findUnique({
+    where: { id: req.params.id }
+  });
+
+  const fotosAtuais = prontuario.dados?.fotos ?? [];
+
+  await prisma.prontuarios.update({
+    where: { id: req.params.id },
+    data: {
+      dados: {
+        ...prontuario.dados,
+        fotos: [...fotosAtuais, { caminho, descricao: req.body.descricao ?? '' }]
+      }
+    }
+  });
+
+  res.status(201).json({ url: data.signedUrl, caminho });
+});
+
+// GET /prontuarios/:id/fotos — gera URLs assinadas das fotos
+router.get('/:id/fotos', async (req, res) => {
+  const prontuario = await prisma.prontuarios.findUnique({
+    where: { id: req.params.id }
+  });
+
+  const fotos = prontuario?.dados?.fotos ?? [];
+
+  const urls = await Promise.all(fotos.map(async (foto) => {
+    const { data } = await supabase.storage
+      .from('fotos-prontuarios')
+      .createSignedUrl(foto.caminho, 3600);
+    return { ...foto, url: data.signedUrl };
+  }));
+
+  res.json(urls);
+});

@@ -21,9 +21,11 @@
   "homepage": "https://github.com/RafaelLP96/AnamneseProject#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@supabase/supabase-js": "^2.106.1",
     "bcryptjs": "^3.0.3",
     "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1"
   },
   "devDependencies": {
     "prisma": "^6.19.3"
