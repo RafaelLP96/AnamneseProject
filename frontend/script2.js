@@ -174,27 +174,106 @@ function formatarData(dataISO) {
   return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function salvarFormulario(e) {
+async function salvarFormulario(e) {
   e.preventDefault();
-  
+
+  const token = localStorage.getItem('token');
   const form = e.target;
   const formData = new FormData(form);
-  const formObj = Object.fromEntries(formData.entries());
-  
-  formObj.id = Date.now().toString();
-  formObj.dataCriacao = new Date().toISOString();
-  formObj.pacienteNome = formObj.nome_social || formObj.nome_registro || 'Paciente sem nome';
-  
-  let formsSalvos = JSON.parse(localStorage.getItem('formularios_' + usuarioLogado) || '[]');
-  formsSalvos.push(formObj);
-  
-  localStorage.setItem('formularios_' + usuarioLogado, JSON.stringify(formsSalvos));
-  
-  mostrarNotificacao('Prontuário salvo com sucesso!', 'sucesso');
-  form.reset();
-  const contentDiv = document.querySelector('.content');
-  if (contentDiv) contentDiv.scrollTop = 0;
-  mudarPagina(1);
+
+  // Build dados object (exclude File objects)
+  const dados = {};
+  const numericKeys = [
+    'mamas_resultado',
+    'mamografia_resultado',
+    'papanicolau_resultado',
+    'psa_resultado',
+    'hepatica_resultado',
+    'lab_tgo_res',
+    'lab_tgp_res',
+    'lab_ggt_res',
+    'lab_bilirrubina_total_res',
+    'lab_bilirrubina_direta_res',
+    'lab_bilirrubina_indireta_res',
+    'lab_psa_total_res',
+    'lab_psa_livre_perc'
+  ];
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) continue;
+
+    let storedValue = value;
+    if (numericKeys.includes(key) && typeof value === 'string' && value.trim() !== '') {
+      const parsed = parseFloat(value.replace(',', '.'));
+      if (!Number.isNaN(parsed)) storedValue = parsed;
+    }
+
+    if (dados[key] !== undefined) {
+      if (Array.isArray(dados[key])) dados[key].push(storedValue);
+      else dados[key] = [dados[key], storedValue];
+    } else {
+      dados[key] = storedValue;
+    }
+  }
+
+  const payload = {
+    nome_social: dados.nome_social || dados.nome_civil || '',
+    identidade_genero: dados.identidade || dados.identidade_genero || '',
+    data_consulta: dados.data_consulta || '',
+    data_proxima_consulta: dados.data_proxima_consulta || '',
+    dados: { ...dados }
+  };
+
+  delete payload.dados.nome_social;
+  delete payload.dados.nome_civil;
+  delete payload.dados.identidade;
+  delete payload.dados.identidade_genero;
+  delete payload.dados.data_consulta;
+  delete payload.dados.data_proxima_consulta;
+
+  if (!payload.nome_social || !payload.data_consulta) {
+    mostrarNotificacao('Nome social e data da consulta são obrigatórios.', 'erro');
+    return;
+  }
+
+  try {
+    const endpoint = `${window.location.origin}/prontuarios`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.erro || 'Erro ao salvar prontuário no servidor');
+    }
+
+    const prontuario = await res.json();
+
+    // If there is a photo field, upload it to /prontuarios/:id/fotos
+    const fileInput = form.querySelector('input[type="file"]');
+    if (fileInput && fileInput.files.length > 0) {
+      const uploadForm = new FormData();
+      uploadForm.append('foto', fileInput.files[0]);
+      const upRes = await fetch(`${window.location.origin}/prontuarios/${prontuario.id}/fotos`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: uploadForm
+      });
+      if (!upRes.ok) {
+        console.warn('Upload da foto falhou');
+      }
+    }
+
+    mostrarNotificacao('Prontuário enviado com sucesso.', 'sucesso');
+    form.reset();
+    const contentDiv = document.querySelector('.content'); if (contentDiv) contentDiv.scrollTop = 0;
+    mudarPagina(1);
+  } catch (err) {
+    console.error(err);
+    mostrarNotificacao(err.message || 'Erro ao enviar formulário.', 'erro');
+  }
 }
 
 function mostrarFormulariosEnviados() {
@@ -274,115 +353,139 @@ function fazerLogout() {
 
 /* ================ ALERTAS AUTOMÁTICOS (ROBUSTOS) ================ */
 
-function dispararAlerta(nivel, mensagem) {
-  const prefixo = nivel === 'vermelho' ? '🔴 ALERTA VERMELHO:\n' : '🟡 ALERTA AMARELO:\n';
-  setTimeout(() => alert(prefixo + mensagem), 100);
+function dispararAlerta(nivel, mensagem, categoria) {
+  const tipo = nivel === 'vermelho' ? 'erro' : 'amarelo';
+  // notificação popup pequena
+  mostrarNotificacao(mensagem.replace(/\n/g, '<br>'), tipo === 'erro' ? 'erro' : 'info');
+
+  // inserir no container do tópico 10 quando categoria for passada
+  if (categoria) {
+    const container = document.getElementById('alertas_topico10');
+    if (container) {
+      const alerta = document.createElement('div');
+      alerta.className = `inline-alert inline-alert-${nivel}`;
+      alerta.style.cssText = nivel === 'vermelho' ? 'background:#f8d7da;color:#721c24;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid #f5c6cb;' : 'background:#fff3cd;color:#856404;padding:8px;border-radius:6px;margin-bottom:6px;border:1px solid #ffeeba;';
+      alerta.innerHTML = `<strong>${categoria}:</strong> ${mensagem.replace(/\n/g,'<br>')}`;
+      container.appendChild(alerta);
+    }
+  }
 }
 
 function configurarAlertasInstantaneos() {
-  
-  // Função para calcular meses entre datas
+  // Função para calcular meses entre datas (reutilizada)
   const calcularMeses = (dataString) => {
     if (!dataString) return 0;
-
-    // Parse manualmente para evitar diferenças de fuso horário em datas no formato yyyy-mm-dd
     const partes = dataString.split('-');
     if (partes.length !== 3) return 0;
-
     const ano = parseInt(partes[0], 10);
     const mes = parseInt(partes[1], 10) - 1;
     const dia = parseInt(partes[2], 10);
-
     const dataExame = new Date(ano, mes, dia);
     if (Number.isNaN(dataExame.getTime())) return 0;
-
     const hoje = new Date();
     let meses = (hoje.getFullYear() - dataExame.getFullYear()) * 12 + (hoje.getMonth() - dataExame.getMonth());
-
-    if (hoje.getDate() < dataExame.getDate()) {
-      meses--;
-    }
+    if (hoje.getDate() < dataExame.getDate()) meses--;
     return meses;
   };
 
-  const verificarRegras = (e) => {
-    const target = e.target;
-    if (!target || !target.name) return;
-    const name = target.name.toLowerCase();
-    const value = target.value;
+  function debounce(fn, wait = 250) {
+    let t;
+    return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  }
 
-    // 1. MONITORAMENTO HEPÁTICO
-    if (name.includes('tgo') || name.includes('tgp') || name.includes('ggt') || name.includes('bili')) {
-      const inputs = {
-        tgo: parseFloat(document.querySelector('input[name*="lab_tgo_res" i]')?.value || 0),
-        tgp: parseFloat(document.querySelector('input[name*="lab_tgp_res" i]')?.value || 0),
-        biliTotal: parseFloat(document.querySelector('input[name="lab_bilirrubina_res" i]')?.value || 0),
-        biliDir: parseFloat(document.querySelector('input[name*="lab_bilirrubina_direta_res" i]')?.value || 0),
-        biliIndir: parseFloat(document.querySelector('input[name*="lab_bilirrubina_indireta_res" i]')?.value || 0),
-        ggt: parseFloat(document.querySelector('input[name*="lab_ggt_res" i]')?.value || 0)
-      };
+  function limparAlertasTopico10() {
+    const container = document.getElementById('alertas_topico10');
+    if (container) container.innerHTML = '';
+  }
 
-      // Alerta Vermelho: TGO/TGP > 3x o limite (assumindo >120 para TGO ou >168 para TGP) ou Bili Total > 2.0
-      if (inputs.tgo > 120 || inputs.tgp > 168 || inputs.biliTotal > 2.0) {
-        dispararAlerta('vermelho', 'Alteração Hepática Grave identificada!\nTGO/TGP > 3x limite ou Bilirrubina Total > 2.0 mg/dL.\nNecessária avaliação médica imediata.');
-      }
-      // Alerta Amarelo: Alteração leve
-      else if (inputs.tgo > 40 || inputs.tgp > 56 || inputs.ggt > 32) {
-        dispararAlerta('amarelo', 'Alteração leve de enzimas hepáticas detectada. Monitorar função hepática conforme protocolo de hormonioterapia.');
-      }
+  function avaliarAlarmesCombinados() {
+    limparAlertasTopico10();
+    const red = [];
+    const yellow = [];
 
-      // Alertas independentes para Bilirrubina
-      if (inputs.biliTotal > 1.2 && inputs.biliTotal <= 2.0) {
-        dispararAlerta('amarelo', 'Bilirrubina Total elevada (> 1.2 mg/dL). Monitorar função hepática conforme protocolo de hormonioterapia.');
-      }
+    const toNumber = (sel) => parseFloat(document.querySelector(sel)?.value || 0);
 
-      else if (inputs.biliTotal > 2.0) {
-        dispararAlerta('vermelho', 'Bilirrubina Total elevada (> 2.0 mg/dL). alteração hepatica grave.');
-      }
+    const tgo = toNumber('input[name="lab_tgo_res"]');
+    const tgp = toNumber('input[name="lab_tgp_res"]');
+    const ggt = toNumber('input[name="lab_ggt_res"]') || toNumber('input[name="lab_ggt_res" i]');
+    const biliTotal = toNumber('input[name="lab_bilirrubina_total_res"]') || toNumber('input[name="lab_bilirrubina_res"]');
+    const biliDir = toNumber('input[name="lab_bilirrubina_direta_res"]') || toNumber('input[name*="lab_bilirrubina_direta_res" i]');
+    const biliIndir = toNumber('input[name="lab_bilirrubina_indireta_res"]') || toNumber('input[name*="lab_bilirrubina_indireta_res" i]');
+    const psa = toNumber('input[name="lab_psa_total_res"]') || toNumber('input[name="psa_resultado"]');
 
-      if (inputs.biliDir > 0.3) {
-        dispararAlerta('amarelo', 'Bilirrubina Direta elevada (> 0.3 mg/dL). Monitorar função hepática conforme protocolo de hormonioterapia.');
-      }
+    const psaDate = document.querySelector('input[name="psa_data"]')?.value;
+    const hepaticaDate = document.querySelector('input[name="hepatica_data"]')?.value;
 
-      if (inputs.biliIndir > 0.8) {
-        dispararAlerta('amarelo', 'Bilirrubina Indireta elevada (> 0.8 mg/dL). Monitorar função hepática conforme protocolo de hormonioterapia.');
+    // Hormonoterapia detectada?
+    const hormonio = (document.querySelector('input[name="tempo_hormonio"]')?.value || document.querySelector('input[name="med_hormonio_tempo"]')?.value || '').trim();
+    const hormonioAtivo = hormonio.length > 0;
+
+    // Critérios hepáticos (seguindo ReferenciaLiteratura.pdf)
+    if ((tgo && tgo > 120) || (tgp && tgp > 168) || (biliTotal && biliTotal > 2.0)) {
+      red.push('Alteração Hepática Grave: TGO/TGP >3x limite ou Bilirrubina Total > 2.0 mg/dL.');
+    } else {
+      if ((tgo && tgo > 40) || (tgp && tgp > 56) || (ggt && ggt > 32)) {
+        yellow.push('Alteração leve de enzimas hepáticas detectada (TGO/TGP/GGT).');
       }
+      if (biliTotal && biliTotal > 1.2) yellow.push('Bilirrubina Total elevada (>1.2 mg/dL).');
+      if (biliDir && biliDir > 0.3) yellow.push('Bilirrubina Direta elevada (>0.3 mg/dL).');
+      if (biliIndir && biliIndir > 0.8) yellow.push('Bilirrubina Indireta elevada (>0.8 mg/dL).');
     }
 
-    // 2. PREVENTIVOS (MAMOGRAFIA)
-    if (name.includes('mamografia_data')) {
-      const meses = calcularMeses(value);
-      if (meses >= 24) {
-        dispararAlerta('amarelo', 'Mamografia de rastreamento em atraso (> 24 meses).');
-      }
+    // Se hormonoterapia ativa e alguma alteração hepática leve, considerar alerta amarelo adicional
+    if (hormonioAtivo && yellow.length > 0 && red.length === 0) {
+      yellow.push('Monitorar mais frequentemente devido a hormonioterapia ativa.');
     }
 
-    // 3. PREVENTIVOS (PAPANICOLAU)
-    if (name.includes('papanicolau_data')) {
-      const meses = calcularMeses(value);
-      if (meses >= 12) { // Alerta para ausência > 12 meses
-        dispararAlerta('amarelo', 'Papanicolau preventivo sem atualização nos últimos 12 meses.');
-      }
-    }
-    
-    // Alerta de Resultados Anormais (Citologia)
-    if (name.includes('citologia_resultado') || name.includes('papanicolau_resultado')) {
-      const res = String(value).toUpperCase();
-      if (['ASC-US', 'LSIL', 'HSIL', 'NIC I', 'NIC II', 'NIC III'].includes(res)) {
-        dispararAlerta('vermelho', 'Resultado de citologia alterado (' + res + ').\nNecessita avaliação especializada urgente.');
-      }
+    // PSA
+    if (psa && psa > 10) red.push('PSA total > 10 ng/mL (Alerta vermelho).');
+    else if (psa && psa > 4) yellow.push('PSA entre 4 e 10 ng/mL (Alerta amarelo).');
+
+    // Preventivos: mamografia/papanicolau
+    const mamaDate = document.querySelector('input[name="mamografia_data"]')?.value;
+    if (mamaDate) {
+      const meses = calcularMeses(mamaDate);
+      if (meses >= 24) yellow.push('Mamografia de rastreamento em atraso (>24 meses).');
     }
 
-    // 4. PSA
-    if (name.includes('psa')) {
-      const psaValue = parseFloat(value || 0);
-      if (psaValue > 10.0) {
-        dispararAlerta('vermelho', 'PSA Total > 10 ng/mL.\nAlteração prostática grave. Encaminhar para avaliação especializada.');
-      } else if (psaValue > 4.0) {
-        dispararAlerta('amarelo', 'PSA Total elevado entre 4 e 10 ng/mL. Necessita monitoramento.');
-      }
+    const papanicoDate = document.querySelector('input[name="papanicolau_data"]')?.value;
+    if (papanicoDate) {
+      const meses = calcularMeses(papanicoDate);
+      if (meses >= 12) yellow.push('Papanicolau sem atualização nos últimos 12 meses.');
     }
-  };
 
-  document.addEventListener('change', verificarRegras);
+    if (psaDate) {
+      const meses = calcularMeses(psaDate);
+      if (meses >= 12) yellow.push('PSA sem atualização nos últimos 12 meses.');
+    }
+
+    if (hepaticaDate) {
+      const meses = calcularMeses(hepaticaDate);
+      if (meses >= 6) yellow.push('Avaliação hepática sem atualização nos últimos 6 meses.');
+    }
+
+    const citologia = (document.querySelector('input[name="citologia_resultado"]')?.value || document.querySelector('input[name="papanicolau_resultado"]')?.value || '').toUpperCase();
+    if (['ASC-US', 'LSIL', 'HSIL', 'NIC I', 'NIC II', 'NIC III'].includes(citologia)) {
+      red.push('Resultado de citologia alterado (' + citologia + '): acompanhamento urgente.');
+    }
+
+    // Build aggregated message
+    const container = document.getElementById('alertas_topico10');
+    if (!container) return;
+
+    if (red.length > 0) {
+      const msg = red.join(' / ') + (yellow.length > 0 ? ' / Observações adicionais: ' + yellow.join(' / ') : '');
+      dispararAlerta('vermelho', msg, 'Tópico 10');
+    } else if (yellow.length > 0) {
+      const msg = yellow.join(' / ');
+      dispararAlerta('amarelo', msg, 'Tópico 10');
+    }
+  }
+
+  const debouncedAvaliar = debounce(avaliarAlarmesCombinados, 300);
+
+  // Simples listener que chama a avaliação combinada quando campos mudarem
+  document.addEventListener('change', function (e) {
+    debouncedAvaliar();
+  });
 }
