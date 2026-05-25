@@ -105,6 +105,16 @@ router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
   if (!req.file)
     return res.status(400).json({ erro: 'Nenhuma foto enviada' });
 
+  const prontuario = await prisma.prontuarios.findUnique({
+    where: { id: req.params.id }
+  });
+
+  if (!prontuario)
+    return res.status(404).json({ erro: 'Prontuário não encontrado' });
+
+  if (prontuario.registrado_por !== req.usuario.id)
+    return res.status(403).json({ erro: 'Acesso negado' });
+
   const ext     = req.file.originalname.split('.').pop();
   const caminho = `${req.params.id}/${Date.now()}.${ext}`;
 
@@ -125,10 +135,6 @@ router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
     console.error('Supabase signed URL error:', signedUrlError);
     return res.status(500).json({ erro: 'Erro ao gerar URL de download', detalhes: signedUrlError.message });
   }
-
-  const prontuario = await prisma.prontuarios.findUnique({
-    where: { id: req.params.id }
-  });
 
   const fotosAtuais = prontuario.dados?.fotos ?? [];
 
@@ -151,6 +157,12 @@ router.get('/:id/fotos', async (req, res) => {
     const prontuario = await prisma.prontuarios.findUnique({
       where: { id: req.params.id }
     });
+
+    if (!prontuario)
+      return res.status(404).json({ erro: 'Prontuário não encontrado' });
+
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
 
     const fotos = prontuario?.dados?.fotos ?? [];
 
