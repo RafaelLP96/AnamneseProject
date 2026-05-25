@@ -7,6 +7,9 @@ if (!localStorage.getItem('token')) {
 let menuAberto = false;
 let usuarioLogado = localStorage.getItem('usuarioAtual') || localStorage.getItem('usuario')?.nome || 'Usuário';
 
+// Guarda notificações já exibidas para evitar repetição lateral
+let shownNotificacoes = new Set();
+
 if (typeof usuarioLogado === 'string' && usuarioLogado.startsWith('{')) {
   try {
     usuarioLogado = JSON.parse(usuarioLogado).nome;
@@ -62,6 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Inicializa os monitores de digitação para os alertas instantâneos
   configurarAlertasInstantaneos();
 });
+
+// Guarda HTML dos alertas antes de limpar para possibilidade de restauração
+let previousAlertasHTML = '';
 
 /* ================ TOGGLE DO MENU ================ */
 function toggleMenu() {
@@ -231,6 +237,29 @@ async function salvarFormulario(e) {
   delete payload.dados.data_consulta;
   delete payload.dados.data_proxima_consulta;
 
+  // Agrupa pares data/resultado em objetos `{ valor, data }` para envio mais estruturado
+  const keys = Object.keys(payload.dados);
+  for (const key of keys) {
+    if (key.endsWith('_res')) {
+      const base = key.slice(0, -4);
+      const dataKey = base + '_data';
+      if (payload.dados[dataKey] !== undefined) {
+        payload.dados[base] = { valor: payload.dados[key], data: payload.dados[dataKey] };
+        delete payload.dados[key];
+        delete payload.dados[dataKey];
+      }
+    }
+    if (key.endsWith('_resultado')) {
+      const base = key.slice(0, -10);
+      const dataKey = base + '_data';
+      if (payload.dados[dataKey] !== undefined) {
+        payload.dados[base] = { valor: payload.dados[key], data: payload.dados[dataKey] };
+        delete payload.dados[key];
+        delete payload.dados[dataKey];
+      }
+    }
+  }
+
   if (!payload.nome_social || !payload.data_consulta) {
     mostrarNotificacao('Nome social e data da consulta são obrigatórios.', 'erro');
     return;
@@ -355,8 +384,12 @@ function fazerLogout() {
 
 function dispararAlerta(nivel, mensagem, categoria) {
   const tipo = nivel === 'vermelho' ? 'erro' : 'amarelo';
-  // notificação popup pequena
-  mostrarNotificacao(mensagem.replace(/\n/g, '<br>'), tipo === 'erro' ? 'erro' : 'info');
+  const chave = `${nivel}:${mensagem}`;
+  // mostrar notificação lateral apenas uma vez por mensagem até os alertas serem limpos
+  if (!shownNotificacoes.has(chave)) {
+    mostrarNotificacao(mensagem.replace(/\n/g, '<br>'), tipo === 'erro' ? 'erro' : 'info');
+    shownNotificacoes.add(chave);
+  }
 
   // inserir no container do tópico 10 quando categoria for passada
   if (categoria) {
@@ -395,7 +428,13 @@ function configurarAlertasInstantaneos() {
 
   function limparAlertasTopico10() {
     const container = document.getElementById('alertas_topico10');
-    if (container) container.innerHTML = '';
+    if (container) {
+      // salva o conteúdo atual para possível restauração
+      previousAlertasHTML = container.innerHTML;
+      container.innerHTML = '';
+    }
+    // permitir que notificações voltem a aparecer após limpeza
+    if (typeof shownNotificacoes !== 'undefined') shownNotificacoes.clear();
   }
 
   function avaliarAlarmesCombinados() {
@@ -407,26 +446,39 @@ function configurarAlertasInstantaneos() {
 
     const tgo = toNumber('input[name="lab_tgo_res"]');
     const tgp = toNumber('input[name="lab_tgp_res"]');
-    const ggt = toNumber('input[name="lab_ggt_res"]') || toNumber('input[name="lab_ggt_res" i]');
+    const ggt = toNumber('input[name="lab_ggt_res"]');
     const biliTotal = toNumber('input[name="lab_bilirrubina_total_res"]') || toNumber('input[name="lab_bilirrubina_res"]');
-    const biliDir = toNumber('input[name="lab_bilirrubina_direta_res"]') || toNumber('input[name*="lab_bilirrubina_direta_res" i]');
-    const biliIndir = toNumber('input[name="lab_bilirrubina_indireta_res"]') || toNumber('input[name*="lab_bilirrubina_indireta_res" i]');
+    const biliDir = toNumber('input[name="lab_bilirrubina_direta_res"]');
+    const biliIndir = toNumber('input[name="lab_bilirrubina_indireta_res"]');
     const psa = toNumber('input[name="lab_psa_total_res"]') || toNumber('input[name="psa_resultado"]');
 
+    const tgoDate = document.querySelector('input[name="lab_tgo_data"]')?.value;
+    const tgpDate = document.querySelector('input[name="lab_tgp_data"]')?.value;
+    const ggtDate = document.querySelector('input[name="lab_ggt_data"]')?.value;
+    const biliTotalDate = document.querySelector('input[name="lab_bilirrubina_total_data"]')?.value;
+    const biliDirDate = document.querySelector('input[name="lab_bilirrubina_direta_data"]')?.value;
+    const biliIndirDate = document.querySelector('input[name="lab_bilirrubina_indireta_data"]')?.value;
     const psaDate = document.querySelector('input[name="psa_data"]')?.value;
     const hepaticaDate = document.querySelector('input[name="hepatica_data"]')?.value;
+
+    const identidade = document.querySelector('input[name="identidade"]:checked')?.value || '';
+    // Map identity to GGT upper limit: male 48, female 32 (fallback female)
+    const ggtUpper = identidade === 'homem_trans' ? 48 : 32;
 
     // Hormonoterapia detectada?
     const hormonio = (document.querySelector('input[name="tempo_hormonio"]')?.value || document.querySelector('input[name="med_hormonio_tempo"]')?.value || '').trim();
     const hormonioAtivo = hormonio.length > 0;
 
-    // Critérios hepáticos (seguindo ReferenciaLiteratura.pdf)
-    if ((tgo && tgo > 120) || (tgp && tgp > 168) || (biliTotal && biliTotal > 2.0)) {
-      red.push('Alteração Hepática Grave: TGO/TGP >3x limite ou Bilirrubina Total > 2.0 mg/dL.');
-    } else {
-      if ((tgo && tgo > 40) || (tgp && tgp > 56) || (ggt && ggt > 32)) {
-        yellow.push('Alteração leve de enzimas hepáticas detectada (TGO/TGP/GGT).');
-      }
+    // Critérios hepáticos (seguindo ReferenciaLiteratura.pdf) - mensagens separadas por parâmetro
+    if (tgo && tgo > 120) red.push('TGO muito elevado (>120 U/L) — possível alteração hepática grave.');
+    if (tgp && tgp > 168) red.push('TGP muito elevado (>168 U/L) — possível alteração hepática grave.');
+    if (biliTotal && biliTotal > 2.0) red.push('Bilirrubina Total > 2.0 mg/dL — alteração hepática grave.');
+
+    // Se não há alerta vermelho específico, verificar alterações leves
+    if (red.length === 0) {
+      if (tgo && tgo > 40) yellow.push('TGO > 40 U/L (elevação leve).');
+      if (tgp && tgp > 56) yellow.push('TGP > 56 U/L (elevação leve).');
+      if (ggt && ggt > ggtUpper) yellow.push(`GGT > ${ggtUpper} U/L (elevação leve).`);
       if (biliTotal && biliTotal > 1.2) yellow.push('Bilirrubina Total elevada (>1.2 mg/dL).');
       if (biliDir && biliDir > 0.3) yellow.push('Bilirrubina Direta elevada (>0.3 mg/dL).');
       if (biliIndir && biliIndir > 0.8) yellow.push('Bilirrubina Indireta elevada (>0.8 mg/dL).');
@@ -459,9 +511,29 @@ function configurarAlertasInstantaneos() {
       if (meses >= 12) yellow.push('PSA sem atualização nos últimos 12 meses.');
     }
 
-    if (hepaticaDate) {
+    if (tgoDate) {
+      const meses = calcularMeses(tgoDate);
+      if (meses >= 6) yellow.push('TGO/TGP sem atualização nos últimos 6 meses.');
+    } else if (hepaticaDate) {
       const meses = calcularMeses(hepaticaDate);
       if (meses >= 6) yellow.push('Avaliação hepática sem atualização nos últimos 6 meses.');
+    }
+
+    if (ggtDate) {
+      const meses = calcularMeses(ggtDate);
+      if (meses >= 6) yellow.push('GGT sem atualização nos últimos 6 meses.');
+    }
+    if (biliTotalDate) {
+      const meses = calcularMeses(biliTotalDate);
+      if (meses >= 6) yellow.push('Bilirrubina Total sem atualização nos últimos 6 meses.');
+    }
+    if (biliDirDate) {
+      const meses = calcularMeses(biliDirDate);
+      if (meses >= 6) yellow.push('Bilirrubina Direta sem atualização nos últimos 6 meses.');
+    }
+    if (biliIndirDate) {
+      const meses = calcularMeses(biliIndirDate);
+      if (meses >= 6) yellow.push('Bilirrubina Indireta sem atualização nos últimos 6 meses.');
     }
 
     const citologia = (document.querySelector('input[name="citologia_resultado"]')?.value || document.querySelector('input[name="papanicolau_resultado"]')?.value || '').toUpperCase();
@@ -474,6 +546,12 @@ function configurarAlertasInstantaneos() {
     if (!container) return;
 
     if (red.length > 0) {
+      // Se Bilirrubina Total gerou alerta vermelho, restaura alertas anteriores e adiciona o novo
+      const hasBiliTotalRed = red.some(r => r.toLowerCase().includes('bilirrubina total'));
+      if (hasBiliTotalRed && previousAlertasHTML) {
+        container.innerHTML = previousAlertasHTML;
+        previousAlertasHTML = '';
+      }
       const msg = red.join(' / ') + (yellow.length > 0 ? ' / Observações adicionais: ' + yellow.join(' / ') : '');
       dispararAlerta('vermelho', msg, 'Tópico 10');
     } else if (yellow.length > 0) {
