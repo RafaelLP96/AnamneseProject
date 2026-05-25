@@ -585,6 +585,17 @@ tr:hover {
   box-shadow: 0 4px 12px rgba(1, 99, 161, 0.1);
 }
 
+.form-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.form-item-info {
+  flex: 1;
+}
+
 .form-item-title {
   font-weight: bold;
   color: #0163a1;
@@ -605,6 +616,56 @@ tr:hover {
   font-size: 12px;
   font-weight: bold;
   margin-top: 8px;
+}
+
+.form-item-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.form-action-btn {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.form-action-btn:hover {
+  border-color: #0163a1;
+  background-color: #f0f7ff;
+}
+
+.print-btn {
+  color: #0163a1;
+}
+
+.print-btn:hover {
+  color: #014d7e;
+  box-shadow: 0 2px 6px rgba(1, 99, 161, 0.2);
+}
+
+.pdf-btn {
+  color: #d97706;
+}
+
+.pdf-btn:hover {
+  color: #b45309;
+  box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+}
+
+.delete-btn {
+  color: #dc2626;
+}
+
+.delete-btn:hover {
+  color: #991b1b;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
 }
 
 .empty-state {
@@ -681,4 +742,34 @@ tr:hover {
   td {
     padding: 6px;
   }
+}
+
+/* ================ ALERTAS INLINE (Tópico 10) ================ */
+#alertas_topico10 {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inline-alert {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  line-height: 1.3;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.inline-alert-vermelho {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+.inline-alert-amarelo {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+}
+.inline-alert-info {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
 }

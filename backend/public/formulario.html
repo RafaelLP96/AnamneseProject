@@ -470,7 +470,10 @@
                     <input type="radio" name="mamas" value="realizado"> Realizado
                     <input type="radio" name="mamas" value="pendente"> Pendente
                   </td>
-                  <td><input type="text" name="mamas_data"></td>
+                  <td>
+                    <input type="date" name="mamas_data" style="width:48%; display:inline-block; margin-right:4%;">
+                    <input type="number" step="1" name="mamas_resultado" placeholder="Resultado" style="width:48%; display:inline-block;">
+                  </td>
                   <td><input type="text" name="mamas_obs"></td>
                 </tr>
                 <tr>
@@ -480,7 +483,10 @@
                     <input type="radio" name="mamografia" value="realizada"> Realizada
                     <input type="radio" name="mamografia" value="pendente"> Pendente
                   </td>
-                  <td><input type="text" name="mamografia_data"></td>
+                  <td>
+                    <input type="date" name="mamografia_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="1" name="mamografia_resultado" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
                   <td><input type="text" name="mamografia_obs"></td>
                 </tr>
                 <tr>
@@ -490,7 +496,10 @@
                     <input type="radio" name="papanicolau" value="realizado"> Realizado
                     <input type="radio" name="papanicolau" value="pendente"> Pendente
                   </td>
-                  <td><input type="text" name="papanicolau_data"></td>
+                  <td>
+                    <input type="date" name="papanicolau_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="text" name="papanicolau_resultado" placeholder="Resultado / ASC-US, LSIL" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
                   <td><input type="text" name="papanicolau_obs"></td>
                 </tr>
                 <tr>
@@ -500,21 +509,81 @@
                     <input type="radio" name="psa" value="realizado"> Realizado
                     <input type="radio" name="psa" value="pendente"> Pendente
                   </td>
-                  <td><input type="text" name="psa_data"></td>
+                  <td>
+                    <input type="date" name="psa_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="0.1" name="psa_resultado" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
                   <td><input type="text" name="psa_obs"></td>
                 </tr>
                 <tr>
-                  <td>Avaliação hepática (TGO/TGP)</td>
+                  <td>TGO / TGP</td>
                   <td>Todos em hormonioterapia</td>
                   <td>
                     <input type="radio" name="hepatica" value="realizada"> Realizada
                     <input type="radio" name="hepatica" value="pendente"> Pendente
                   </td>
-                  <td><input type="text" name="hepatica_data"></td>
-                  <td><input type="text" name="hepatica_obs"></td>
+                  <td>
+                    <div style="margin-bottom:6px;">
+                      <input type="date" name="lab_tgo_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                      <input type="number" step="1" name="lab_tgo_res" placeholder="TGO (U/L)" style="width:38%; display:inline-block; box-sizing:border-box;">
+                    </div>
+                    <div>
+                      <input type="date" name="lab_tgp_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                      <input type="number" step="1" name="lab_tgp_res" placeholder="TGP (U/L)" style="width:38%; display:inline-block; box-sizing:border-box;">
+                    </div>
+                  </td>
+                  <td><input type="text" name="lab_tgo_obs"></td>
+                </tr>
+                <tr>
+                  <td>Gama GT (GGT)</td>
+                  <td>Função hepática complementar</td>
+                  <td>–</td>
+                  <td>
+                    <input type="date" name="lab_ggt_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="1" name="lab_ggt_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
+                  <td><input type="text" name="lab_ggt_obs"></td>
+                </tr>
+                <tr>
+                  <td>Bilirrubina Total</td>
+                  <td>Função hepática</td>
+                  <td>–</td>
+                  <td>
+                    <input type="date" name="lab_bilirrubina_total_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="0.1" name="lab_bilirrubina_total_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
+                  <td><input type="text" name="lab_bilirrubina_total_obs"></td>
+                </tr>
+                <tr>
+                  <td>Bilirrubina Direta</td>
+                  <td>Função hepática</td>
+                  <td>–</td>
+                  <td>
+                    <input type="date" name="lab_bilirrubina_direta_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="0.1" name="lab_bilirrubina_direta_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
+                  <td><input type="text" name="lab_bilirrubina_direta_obs"></td>
+                </tr>
+                <tr>
+                  <td>Bilirrubina Indireta</td>
+                  <td>Função hepática</td>
+                  <td>–</td>
+                  <td>
+                    <input type="date" name="lab_bilirrubina_indireta_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+                    <input type="number" step="0.1" name="lab_bilirrubina_indireta_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+                  </td>
+                  <td><input type="text" name="lab_bilirrubina_indireta_obs"></td>
+                </tr>
+                <tr>
+                  <td>PSA Total / Livre (%)</td>
+                  <td>Prostatic indicators</td>
+                  <td>–</td>
+                  <td><input type="text" name="lab_psa_total_res" placeholder="PSA total"><br><input type="text" name="lab_psa_livre_perc" placeholder="PSA livre %" style="margin-top:6px;width:100%"></td>
+                  <td><input type="text" name="lab_psa_obs"></td>
                 </tr>
               </tbody>
             </table>
+              <div id="alertas_topico10" style="margin-top:12px;"></div>
             </em></p>
 
             <label style="display: block; margin-top: 20px;">Área para inserção de foto ou marcação digital (queda capilar, acne, alterações cutâneas)</label><br>
@@ -552,12 +621,7 @@
                   <td><input type="date" name="lab_lipidico_data"></td>
                   <td><input type="text" name="lab_lipidico_obs"></td>
                 </tr>
-                <tr>
-                  <td>TGO / TGP</td>
-                  <td><input type="text" name="lab_tgo_res"></td>
-                  <td><input type="date" name="lab_tgo_data"></td>
-                  <td><input type="text" name="lab_tgo_obs"></td>
-                </tr>
+                <!-- TGO/TGP moved to Tópico 10 (Avaliação hepática) to keep inputs together with other preventive checks -->
                 <tr>
                   <td>Prolactina</td>
                   <td><input type="text" name="lab_prolactina_res"></td>
