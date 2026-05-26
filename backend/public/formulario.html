@@ -1,746 +1,1492 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
+
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Prontuário Eletrônico de Enfermagem</title>
+
   <link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
+
+
   <div class="layout">
+
     <aside class="sidebar" id="sidebar">
+
       <div class="sidebar-header">
+
         <div class="logo-container" id="logoContainer">
+
           <span class="logo-text">Menu</span>
+
         </div>
+
       </div>
-      
+
+     
+
       <nav class="sidebar-nav" id="sidebarNav">
+
         <button class="nav-btn active" onclick="mudarPagina(1)">
+
           <span class="nav-icon"></span>
+
           <span class="nav-label">Página 1</span>
+
         </button>
+
         <button class="nav-btn" onclick="mudarPagina(2)">
+
           <span class="nav-icon"></span>
+
           <span class="nav-label">Página 2</span>
+
         </button>
+
         <button class="nav-btn" onclick="mudarPagina(3)">
+
           <span class="nav-icon"></span>
+
           <span class="nav-label">Página 3</span>
+
         </button>
+
         <button class="nav-btn" onclick="mudarPagina(4)">
+
           <span class="nav-icon"></span>
+
           <span class="nav-label">Finalizar</span>
+
         </button>
+
       </nav>
 
+
+
       <div class="sidebar-footer" id="sidebarFooter">
+
         <button class="menu-btn view-forms-btn" id="viewFormsBtn" onclick="mostrarFormulariosEnviados()">
+
           <span class="btn-icon"></span>
+
           <span class="btn-label">Formulários</span>
+
         </button>
+
         <button class="menu-btn logout-btn" id="logoutBtn" onclick="fazerLogout()">
+
           <span class="btn-icon"></span>
+
           <span class="btn-label">Sair</span>
+
         </button>
+
       </div>
+
     </aside>
 
+
+
     <main class="content">
+
       <header class="topbar">
+
         <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+
           <div class="hamburger">
+
             <span class="bar"></span>
+
             <span class="bar"></span>
+
             <span class="bar"></span>
+
           </div>
+
         </button>
+
         <div class="user-info">
+
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0163a1" stroke-width="2">
+
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+
             <circle cx="12" cy="7" r="4"></circle>
+
           </svg>
+
           <span id="usuarioNome">Usuário</span>
+
         </div>
+
       </header>
 
+
+
       <div class="modal" id="formsModal">
+
         <div class="modal-content">
+
           <div class="modal-header">
+
             <h2>Meus Formulários Enviados</h2>
+
             <button class="modal-close" onclick="fecharFormulariosEnviados()">&times;</button>
+
           </div>
+
           <div class="modal-body" id="formsModalBody">
+
             <div class="loading">Carregando seus formulários...</div>
+
           </div>
+
         </div>
+
       </div>
 
+
+
       <form id="prontuarioForm" enctype="multipart/form-data">
-        
+
+       
+
         <div id="pagina1" class="page active">
-          
+
+         
+
           <div class="card">
+
             <h1>Prontuário Eletrônico de Enfermagem para Pessoas Trans</h1>
+
             <p><em>Anamnese, exame físico e acompanhamento integral</em></p>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>1. Identificação</h2>
+
             <label>Nome social:</label><br>
+
             <input type="text" name="nome_social"><br><br>
+
             <label>Nome civil (opcional):</label><br>
+
             <input type="text" name="nome_civil"><br><br>
+
             <label>Pronome:</label><br>
+
             <input type="text" name="pronome"><br><br>
+
             <label>Identidade de gênero:</label><br>
+
             <input type="radio" name="identidade" value="mulher_trans"> Mulher trans<br>
+
             <input type="radio" name="identidade" value="homem_trans"> Homem trans<br>
+
             <input type="radio" name="identidade" value="nao_binario"> Não-binário<br>
+
             <input type="radio" name="identidade" value="outro"> Outro<br><br>
+
             <label>Idade:</label><br>
+
             <input type="number" name="idade"><br><br>
+
             <label>Contato:</label><br>
+
             <input type="text" name="contato"><br><br>
+
             <label>Profissional responsável:</label><br>
+
             <input type="text" name="profissional"><br><br>
+
             <label>Data da consulta:</label><br>
+
             <input type="date" name="data_consulta"><br><br>
+
             <label>Data da próxima consulta:</label><br>
+
             <input type="date" name="data_proxima_consulta">
+
           </div>
 
+
+
           <div class="card">
+
             <h2>2. Queixa Principal</h2>
+
             <textarea name="queixa_principal" rows="4" style="width:100%"></textarea>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>3. História da Doença Atual (HDA)</h2>
+
             <textarea name="hda" rows="4" style="width:100%"></textarea>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>4. História Pessoal e Clínica</h2>
+
             <label>Tempo de uso de hormonioterapia:</label><br>
+
             <input type="text" name="tempo_hormonio" placeholder="Ex: 2 anos"><br><br>
+
             <label>Alergias:</label><br>
+
             <input type="text" name="alergias">
+
           </div>
+
         </div>
+
+
 
         <div id="pagina2" class="page">
+
           <div class="card">
+
             <h2>5. Investigação Sexual e Reprodutiva</h2>
+
             <p><em>
+
             <label>Atividade sexual atual:</label><br>
+
             <input type="radio" name="atividade_sexual" value="sim"> Sim
+
             <input type="radio" name="atividade_sexual" value="nao"> Não<br><br>
 
+
+
             <label>Número de parceiros(as) nos últimos 12 meses:</label><br>
+
             <input type="number" name="num_parceiros"><br><br>
 
+
+
             <label>Tipo(s) de parceria(s):</label><br>
+
             <input type="radio" name="tipo_parceria" value="fixa"> Fixa<br>
+
             <input type="radio" name="tipo_parceria" value="ocasional"> Ocasional<br>
+
             <input type="radio" name="tipo_parceria" value="multipla"> Múltipla<br><br>
 
+
+
             <label>Uso de preservativos:</label><br>
+
             <input type="radio" name="preservativo" value="sempre"> Sempre
+
             <input type="radio" name="preservativo" value="as_vezes"> Às vezes
+
             <input type="radio" name="preservativo" value="nunca"> Nunca<br><br>
 
+
+
             <label>História de ISTs:</label><br>
+
             <input type="radio" name="ist" value="sim"> Sim
+
             <input type="radio" name="ist" value="nao"> Não<br>
+
             <label>Quais:</label> <input type="text" name="ist_quais"><br><br>
 
+
+
             <label>Desejo reprodutivo atual:</label><br>
+
             <input type="radio" name="desejo_reprod" value="sim"> Sim
+
             <input type="radio" name="desejo_reprod" value="nao"> Não
+
             <input type="radio" name="desejo_reprod" value="duvida"> Em dúvida<br><br>
 
+
+
             <label>Planejamento reprodutivo realizado:</label><br>
+
             <input type="radio" name="planej_reprod" value="sim"> Sim
+
             <input type="radio" name="planej_reprod" value="nao"> Não<br><br>
 
+
+
             <label>Acesso a serviços de saúde sexual e reprodutiva:</label><br>
+
             <input type="radio" name="acesso_saude_sexual" value="sim"> Sim
+
             <input type="radio" name="acesso_saude_sexual" value="nao"> Não<br><br>
 
+
+
             <label>Orientações recebidas:</label><br>
+
             <input type="text" name="orientacoes_recebidas">
+
             </em></p>
-          </div>
-          
-          <div class="card">
-            <h2>6. Uso de Medicações</h2>
-            <p><em>Classe e tempo de uso — não incluir nomes comerciais</em></p>
-            <table border="1" cellpadding="6" cellspacing="0">
-              <thead>
-                <tr>
-                  <th>Classe medicamentosa</th>
-                  <th>Tempo de uso</th>
-                  <th>Observações</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Hormonioterapia</td>
-                  <td><input type="text" name="med_hormonio_tempo" placeholder="Ex: 6 meses"></td>
-                  <td><input type="text" name="med_hormonio_obs"></td>
-                </tr>
-                <tr>
-                  <td>Antidepressivos</td>
-                  <td><input type="text" name="med_antidep_tempo"></td>
-                  <td><input type="text" name="med_antidep_obs"></td>
-                </tr>
-                <tr>
-                  <td>Anti-hipertensivos</td>
-                  <td><input type="text" name="med_antihip_tempo"></td>
-                  <td><input type="text" name="med_antihip_obs"></td>
-                </tr>
-                <tr>
-                  <td>Anticoagulantes</td>
-                  <td><input type="text" name="med_anticoa_tempo"></td>
-                  <td><input type="text" name="med_anticoa_obs"></td>
-                </tr>
-                <tr>
-                  <td>Antiandrogênicos</td>
-                  <td><input type="text" name="med_antiandr_tempo"></td>
-                  <td><input type="text" name="med_antiandr_obs"></td>
-                </tr>
-                <tr>
-                  <td>Outros</td>
-                  <td><input type="text" name="med_outros_tempo"></td>
-                  <td><input type="text" name="med_outros_obs"></td>
-                </tr>
-              </tbody>
-            </table>
+
           </div>
 
+         
+
           <div class="card">
-            <h2>7. Avaliação Mental e Emocional</h2>
-            <p><em>
+
+            <h2>6. Uso de Medicações</h2>
+
+            <p><em>Classe e tempo de uso — não incluir nomes comerciais</em></p>
+
             <table border="1" cellpadding="6" cellspacing="0">
+
               <thead>
+
                 <tr>
-                  <th>Aspecto</th>
-                  <th>Observação</th>
+
+                  <th>Classe medicamentosa</th>
+
+                  <th>Tempo de uso</th>
+
+                  <th>Observações</th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 <tr>
-                  <td>Humor</td>
-                  <td><input type="text" name="humor"></td>
+
+                  <td>Hormonioterapia</td>
+
+                  <td><input type="text" name="med_hormonio_tempo" placeholder="Ex: 6 meses"></td>
+
+                  <td><input type="text" name="med_hormonio_obs"></td>
+
                 </tr>
+
                 <tr>
-                  <td>Ansiedade</td>
-                  <td><input type="text" name="ansiedade"></td>
+
+                  <td>Antidepressivos</td>
+
+                  <td><input type="text" name="med_antidep_tempo"></td>
+
+                  <td><input type="text" name="med_antidep_obs"></td>
+
                 </tr>
+
                 <tr>
-                  <td>Autoimagem corporal</td>
-                  <td><input type="text" name="autoimagem"></td>
+
+                  <td>Anti-hipertensivos</td>
+
+                  <td><input type="text" name="med_antihip_tempo"></td>
+
+                  <td><input type="text" name="med_antihip_obs"></td>
+
                 </tr>
+
                 <tr>
-                  <td>Sono</td>
-                  <td><input type="text" name="sono"></td>
+
+                  <td>Anticoagulantes</td>
+
+                  <td><input type="text" name="med_anticoa_tempo"></td>
+
+                  <td><input type="text" name="med_anticoa_obs"></td>
+
                 </tr>
+
                 <tr>
-                  <td>Apoio familiar/social</td>
-                  <td><input type="text" name="apoio_familiar"></td>
+
+                  <td>Antiandrogênicos</td>
+
+                  <td><input type="text" name="med_antiandr_tempo"></td>
+
+                  <td><input type="text" name="med_antiandr_obs"></td>
+
                 </tr>
+
+                <tr>
+
+                  <td>Outros</td>
+
+                  <td><input type="text" name="med_outros_tempo"></td>
+
+                  <td><input type="text" name="med_outros_obs"></td>
+
+                </tr>
+
               </tbody>
+
+            </table>
+
+          </div>
+
+
+
+          <div class="card">
+
+            <h2>7. Avaliação Mental e Emocional</h2>
+
+            <p><em>
+
+            <table border="1" cellpadding="6" cellspacing="0">
+
+              <thead>
+
+                <tr>
+
+                  <th>Aspecto</th>
+
+                  <th>Observação</th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                <tr>
+
+                  <td>Humor</td>
+
+                  <td><input type="text" name="humor"></td>
+
+                </tr>
+
+                <tr>
+
+                  <td>Ansiedade</td>
+
+                  <td><input type="text" name="ansiedade"></td>
+
+                </tr>
+
+                <tr>
+
+                  <td>Autoimagem corporal</td>
+
+                  <td><input type="text" name="autoimagem"></td>
+
+                </tr>
+
+                <tr>
+
+                  <td>Sono</td>
+
+                  <td><input type="text" name="sono"></td>
+
+                </tr>
+
+                <tr>
+
+                  <td>Apoio familiar/social</td>
+
+                  <td><input type="text" name="apoio_familiar"></td>
+
+                </tr>
+
+              </tbody>
+
             </table><br>
+
+
 
             <label>Ideação suicida:</label><br>
+
             <input type="radio" name="ideacao_suicida" value="sim"> Sim
+
             <input type="radio" name="ideacao_suicida" value="nao"> Não
+
             </em></p>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>8. Enfrentamentos Sociais e Contextos de Vulnerabilidade</h2>
+
             <p><em>
+
             <table border="1" cellpadding="6" cellspacing="0">
+
               <thead>
+
                 <tr>
+
                   <th>Aspecto</th>
+
                   <th>Situação</th>
+
                   <th>Observação</th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 <tr>
+
                   <td>Situação de moradia</td>
+
                   <td>
+
                     <input type="radio" name="moradia" value="estavel"> Estável
+
                     <input type="radio" name="moradia" value="instavel"> Instável
+
                     <input type="radio" name="moradia" value="rua"> Rua
+
                   </td>
+
                   <td><input type="text" name="moradia_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Vínculos familiares</td>
+
                   <td>
+
                     <input type="radio" name="vinculos" value="presentes"> Presentes
+
                     <input type="radio" name="vinculos" value="parcialmente"> Parcialmente
+
                     <input type="radio" name="vinculos" value="rompidos"> Rompidos
+
                   </td>
+
                   <td><input type="text" name="vinculos_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Acesso ao trabalho / renda</td>
+
                   <td>
+
                     <input type="radio" name="trabalho" value="formal"> Formal
+
                     <input type="radio" name="trabalho" value="informal"> Informal
+
                     <input type="radio" name="trabalho" value="desempregado"> Desempregado(a)
+
                   </td>
+
                   <td><input type="text" name="trabalho_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Acesso à saúde pública</td>
+
                   <td>
+
                     <input type="radio" name="acesso_saude" value="regular"> Regular
+
                     <input type="radio" name="acesso_saude" value="dificultado"> Dificultado
+
                   </td>
+
                   <td><input type="text" name="acesso_saude_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Discriminação vivida</td>
+
                   <td>
+
                     <input type="radio" name="discriminacao" value="nenhuma"> Nenhuma
+
                     <input type="radio" name="discriminacao" value="relatada"> Relatada
+
                   </td>
+
                   <td><input type="text" name="discriminacao_obs" placeholder="Descrever se relatada"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Rede de apoio social</td>
+
                   <td>
+
                     <input type="radio" name="rede_apoio" value="sim"> Sim
+
                     <input type="radio" name="rede_apoio" value="nao"> Não
+
                   </td>
+
                   <td><input type="text" name="rede_apoio_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Estratégias de enfrentamento</td>
+
                   <td colspan="2"><input type="text" name="estrategias" size="60"></td>
+
                 </tr>
+
               </tbody>
+
             </table><br>
 
+
+
             <label>Encaminhamentos necessários:</label><br>
+
             <input type="checkbox" name="encaminhamento" value="servico_social"> Serviço Social<br>
+
             <input type="checkbox" name="encaminhamento" value="psicologia"> Psicologia<br>
+
             <input type="checkbox" name="encaminhamento" value="juridico"> Jurídico<br>
+
             <input type="checkbox" name="encaminhamento" value="outros"> Outros: <input type="text" name="encaminhamento_outros"></em></p>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>9. Exame Físico Geral</h2>
+
             <p><em><h3>Sinais Vitais</h3>
 
+
+
             <label>PA:</label> <input type="text" name="pa" size="8"> mmHg &nbsp;
+
             <label>FC:</label> <input type="number" name="fc" size="5"> bpm &nbsp;
+
             <label>FR:</label> <input type="number" name="fr" size="5"> irpm<br><br>
+
             <label>Temp:</label> <input type="number" name="temp" step="0.1" size="5"> °C &nbsp;
+
             <label>SpO₂:</label> <input type="number" name="spo2" size="5"> % &nbsp;
+
             <label>Peso:</label> <input type="number" name="peso" step="0.1" size="6"> kg<br><br>
+
             <label>Altura:</label> <input type="number" name="altura" step="0.01" size="6"> m &nbsp;
+
             <label>IMC:</label> <input type="number" name="imc" step="0.1" size="6"><br><br>
 
+
+
             <hr><br>
+
             <h3>Pele e Pelos</h3> <br>
 
+
+
             <label>Distribuição:</label><br>
+
             <input type="radio" name="distribuicao" value="feminina"> Feminina<br>
+
             <input type="radio" name="distribuicao" value="masculina"> Masculina<br>
+
             <input type="radio" name="distribuicao" value="mista"> Mista<br><br>
-            
+
+           
+
             <label>Acne:</label>
+
             <input type="radio" name="acne_ef" value="sim"> Sim — Região: <input type="text" name="acne_regiao"><br><br>
+
             <input type="radio" name="acne_ef" value="nao"> Não<br><br>
-            
+
+           
+
             <label>Oleosidade:</label><br>
+
             <input type="radio" name="oleosidade" value="normal"> Normal<br>
+
             <input type="radio" name="oleosidade" value="aumentada"> Aumentada<br><br>
 
+
+
             <label>Queda capilar:</label><br>
+
             <input type="radio" name="queda_capilar" value="sim"> Sim<br>
+
             <input type="radio" name="queda_capilar" value="nao"> Não<br><br>
+
             <label>Estrias / pigmentações:</label><br>
+
             <input type="text" name="estrias"><br><br>
 
+
+
             <label style="display: block; margin-top: 20px;">Área para inserção de foto ou marcação digital (queda capilar, acne, alterações cutâneas)</label>
+
             <input type="file" accept="image/*" name="foto_pele_pelos" style="margin-top: 10px; width: 100%; max-width: 320px;"><br><br>
 
+
+
             <hr>
+
             <h3>Sistema Cardiovascular</h3><br>
 
+
+
             <label>Pulsos periféricos:</label><br><br>
+
             <input type="radio" name="pulsos" value="palpaveis"> Palpáveis<br>
+
             <input type="radio" name="pulsos" value="diminuidos"> Diminuídos<br><br>
 
+
+
             <label>Edema:</label><br><br>
+
             <input type="radio" name="edema" value="sim"> Sim<br>
+
             <input type="radio" name="edema" value="nao"> Não<br><br>
 
+
+
             <label>Sinais de aterosclerose:</label><br><br>
+
             <input type="radio" name="aterosclerose" value="sim"> Sim<br>
+
             <input type="radio" name="aterosclerose" value="nao"> Não<br><br>
+
             <hr>
+
             <h3>Sistema Respiratório</h3><br>
 
+
+
             <label>Murmúrio vesicular:</label><br><br>
+
             <input type="radio" name="mv" value="presente"> Presente<br>
+
             <input type="radio" name="mv" value="diminuido"> Diminuído<br><br>
 
+
+
             <label>Dispneia:</label><br>
+
             <input type="radio" name="dispneia" value="sim"> Sim<br>
+
             <input type="radio" name="dispneia" value="nao"> Não<br><br>
 
+
+
             <hr>
+
             <h3>Sistema Digestivo / Hepático</h3><br>
 
+
+
             <label>Fígado palpável:</label><br>
+
             <input type="radio" name="figado" value="sim"> Sim<br>
+
             <input type="radio" name="figado" value="nao"> Não<br><br>
+
  
+
             <label>Náuseas / vômitos:</label><br>
+
             <input type="radio" name="nauseas" value="sim"> Sim<br>
+
             <input type="radio" name="nauseas" value="nao"> Não<br><br>
 
+
+
             <hr>
+
             <h3>Sistema Geniturinário</h3><br>
 
+
+
             <div class="form-group">
+
               <label>Tipo anatômico:</label>
+
               <div class="radio-group">
+
                 <label><input type="radio" name="tipo_anatomico" value="penis"> Pênis</label><br>
+
                 <label><input type="radio" name="tipo_anatomico" value="vagina_neo"> Vagina neoconstruída</label><br>
+
                 <label><input type="radio" name="tipo_anatomico" value="neofalo"> Neofalo</label><br>
+
                 <label><input type="radio" name="tipo_anatomico" value="nao_declarado"> Não declarado</label><br>
+
               </div>
+
             </div>
 
+
+
             <div class="form-group">
+
               <label>Corrimento / prurido / dor:</label><br>
+
               <div class="radio-group">
+
                 <label><input type="radio" name="corrimento" value="sim"> Sim</label><br>
+
                 <label><input type="radio" name="corrimento" value="nao"> Não</label>
+
               </div>
+
             </div>
 
+
+
             <div class="form-group">
+
               <label>Micção:</label>
+
               <div class="radio-group">
+
                 <label><input type="radio" name="miccao" value="normal"> Normal</label>
+
                 <label><input type="radio" name="miccao" value="alterada"> Alterada</label>
+
               </div>
+
             </div>
 
+
+
             <div class="form-group">
+
               <label for="genit_image">Área para marcação de cicatrizes, áreas de dor ou inflamação (com opção de imagem neutra corporal)</label><br>
+
               <input type="file" id="genit_image" name="genit_image" accept="image/*">
+
             </div>
+
             </em></p>
+
           </div>
+
         </div>
+
+
 
         <div id="pagina3" class="page">
+
           <div class="card">
+
             <h2>10. Avaliação de Órgãos-Alvo e Prevenção de Câncer</h2>
+
             <p><em>
+
             <table border="1" cellpadding="6" cellspacing="0">
+
               <thead>
+
                 <tr>
+
                   <th>Rastreamento / Avaliação</th>
+
                   <th>Indicação</th>
+
                   <th>Situação</th>
+
                   <th>Data / Resultado</th>
+
                   <th>Observações</th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 <tr>
+
                   <td>Exame clínico das mamas</td>
+
                   <td>Mulheres trans em uso de estrogênio (&gt;5 anos)</td>
+
                   <td>
+
                     <input type="radio" name="mamas" value="realizado"> Realizado
+
                     <input type="radio" name="mamas" value="pendente"> Pendente
+
                   </td>
+
                   <td>
+
                     <input type="date" name="mamas_data" style="width:48%; display:inline-block; margin-right:4%;">
+
                     <input type="number" step="1" name="mamas_resultado" placeholder="Resultado" style="width:48%; display:inline-block;">
+
                   </td>
+
                   <td><input type="text" name="mamas_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Mamografia</td>
+
                   <td>Conforme idade e uso hormonal</td>
+
                   <td>
+
                     <input type="radio" name="mamografia" value="realizada"> Realizada
+
                     <input type="radio" name="mamografia" value="pendente"> Pendente
+
                   </td>
+
                   <td>
+
                     <input type="date" name="mamografia_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="1" name="mamografia_resultado" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="mamografia_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Papanicolau (colo uterino)</td>
+
                   <td>Homens trans com colo uterino</td>
+
                   <td>
+
                     <input type="radio" name="papanicolau" value="realizado"> Realizado
+
                     <input type="radio" name="papanicolau" value="pendente"> Pendente
+
                   </td>
+
                   <td>
+
                     <input type="date" name="papanicolau_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="text" name="papanicolau_resultado" placeholder="Resultado / ASC-US, LSIL" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="papanicolau_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Toque retal / PSA</td>
+
                   <td>Mulheres trans com próstata</td>
+
                   <td>
+
                     <input type="radio" name="psa" value="realizado"> Realizado
+
                     <input type="radio" name="psa" value="pendente"> Pendente
+
                   </td>
+
                   <td>
+
                     <input type="date" name="psa_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="0.1" name="psa_resultado" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="psa_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>TGO / TGP</td>
+
                   <td>Todos em hormonioterapia</td>
+
                   <td>
+
                     <input type="radio" name="hepatica" value="realizada"> Realizada
+
                     <input type="radio" name="hepatica" value="pendente"> Pendente
+
                   </td>
+
                   <td>
+
                     <div style="margin-bottom:6px;">
+
                       <input type="date" name="lab_tgo_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                       <input type="number" step="1" name="lab_tgo_res" placeholder="TGO (U/L)" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                     </div>
+
                     <div>
+
                       <input type="date" name="lab_tgp_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                       <input type="number" step="1" name="lab_tgp_res" placeholder="TGP (U/L)" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                     </div>
+
                   </td>
+
                   <td><input type="text" name="lab_tgo_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Gama GT (GGT)</td>
+
                   <td>Função hepática complementar</td>
+
                   <td>–</td>
+
                   <td>
+
                     <input type="date" name="lab_ggt_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="1" name="lab_ggt_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="lab_ggt_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Bilirrubina Total</td>
+
                   <td>Função hepática</td>
+
                   <td>–</td>
+
                   <td>
+
                     <input type="date" name="lab_bilirrubina_total_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="0.1" name="lab_bilirrubina_total_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="lab_bilirrubina_total_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Bilirrubina Direta</td>
+
                   <td>Função hepática</td>
+
                   <td>–</td>
+
                   <td>
+
                     <input type="date" name="lab_bilirrubina_direta_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="0.1" name="lab_bilirrubina_direta_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="lab_bilirrubina_direta_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Bilirrubina Indireta</td>
+
                   <td>Função hepática</td>
+
                   <td>–</td>
+
                   <td>
+
                     <input type="date" name="lab_bilirrubina_indireta_data" style="width:60%; display:inline-block; margin-right:2%; box-sizing:border-box;">
+
                     <input type="number" step="0.1" name="lab_bilirrubina_indireta_res" placeholder="Resultado" style="width:38%; display:inline-block; box-sizing:border-box;">
+
                   </td>
+
                   <td><input type="text" name="lab_bilirrubina_indireta_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>PSA Total / Livre (%)</td>
+
                   <td>Prostatic indicators</td>
+
                   <td>–</td>
+
                   <td><input type="text" name="lab_psa_total_res" placeholder="PSA total"><br><input type="text" name="lab_psa_livre_perc" placeholder="PSA livre %" style="margin-top:6px;width:100%"></td>
+
                   <td><input type="text" name="lab_psa_obs"></td>
+
                 </tr>
+
               </tbody>
+
             </table>
+
               <div id="alertas_topico10" style="margin-top:12px;"></div>
+
             </em></p>
+
+
 
             <label style="display: block; margin-top: 20px;">Área para inserção de foto ou marcação digital (queda capilar, acne, alterações cutâneas)</label><br>
+
             <input type="file" accept="image/*" name="foto_alteracoes_cutaneas" style="margin-top: 10px;">
+
           </div>
 
+
+
           <div class="card">
+
             <h2>11. Exames Laboratoriais Recentes</h2>
+
             <p><em>
+
             <table border="1" cellpadding="6" cellspacing="0">
+
               <thead>
+
                 <tr>
+
                   <th>Exame</th>
+
                   <th>Resultado</th>
+
                   <th>Data</th>
+
                   <th>Observação</th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 <tr>
+
                   <td>Hemograma</td>
+
                   <td><input type="text" name="lab_hemograma_res"></td>
+
                   <td><input type="date" name="lab_hemograma_data"></td>
+
                   <td><input type="text" name="lab_hemograma_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Glicemia</td>
+
                   <td><input type="text" name="lab_glicemia_res"></td>
+
                   <td><input type="date" name="lab_glicemia_data"></td>
+
                   <td><input type="text" name="lab_glicemia_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Perfil lipídico</td>
+
                   <td><input type="text" name="lab_lipidico_res"></td>
+
                   <td><input type="date" name="lab_lipidico_data"></td>
+
                   <td><input type="text" name="lab_lipidico_obs"></td>
+
                 </tr>
+
                 <!-- TGO/TGP moved to Tópico 10 (Avaliação hepática) to keep inputs together with other preventive checks -->
+
                 <tr>
+
                   <td>Prolactina</td>
+
                   <td><input type="text" name="lab_prolactina_res"></td>
+
                   <td><input type="date" name="lab_prolactina_data"></td>
+
                   <td><input type="text" name="lab_prolactina_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Estradiol / Testosterona</td>
+
                   <td><input type="text" name="lab_hormonio_res"></td>
+
                   <td><input type="date" name="lab_hormonio_data"></td>
+
                   <td><input type="text" name="lab_hormonio_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Creatinina</td>
+
                   <td><input type="text" name="lab_creatinina_res"></td>
+
                   <td><input type="date" name="lab_creatinina_data"></td>
+
                   <td><input type="text" name="lab_creatinina_obs"></td>
+
                 </tr>
+
               </tbody>
+
             </table>
+
             </em></p>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>12. Acompanhamento Interprofissional</h2>
+
             <p><em>
+
             <table border="1" cellpadding="6" cellspacing="0">
+
               <thead>
+
                 <tr>
+
                   <th>Equipe</th>
+
                   <th>Profissional</th>
+
                   <th>Data</th>
+
                   <th>Plano / Observações</th>
+
                 </tr>
+
               </thead>
+
               <tbody>
+
                 <tr>
+
                   <td>Endocrinologia</td>
+
                   <td><input type="text" name="equipe_endo_prof"></td>
+
                   <td><input type="date" name="equipe_endo_data"></td>
+
                   <td><input type="text" name="equipe_endo_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Psicologia</td>
+
                   <td><input type="text" name="equipe_psico_prof"></td>
+
                   <td><input type="date" name="equipe_psico_data"></td>
+
                   <td><input type="text" name="equipe_psico_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Serviço Social</td>
+
                   <td><input type="text" name="equipe_social_prof"></td>
+
                   <td><input type="date" name="equipe_social_data"></td>
+
                   <td><input type="text" name="equipe_social_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Nutrição</td>
+
                   <td><input type="text" name="equipe_nutri_prof"></td>
+
                   <td><input type="date" name="equipe_nutri_data"></td>
+
                   <td><input type="text" name="equipe_nutri_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Fisioterapia / Fono / Cirurgia plástica</td>
+
                   <td><input type="text" name="equipe_fisio_prof"></td>
+
                   <td><input type="date" name="equipe_fisio_data"></td>
+
                   <td><input type="text" name="equipe_fisio_obs"></td>
+
                 </tr>
+
                 <tr>
+
                   <td>Outros</td>
+
                   <td><input type="text" name="equipe_outros_prof"></td>
+
                   <td><input type="date" name="equipe_outros_data"></td>
+
                   <td><input type="text" name="equipe_outros_obs"></td>
+
                 </tr>
+
               </tbody>
+
             </table></em></p>
+
           </div>
 
+
+
           <div class="card">
+
             <h2>13. Conduta de Enfermagem</h2>
+
             <p><em>
+
+
 
             <label>Educação em saúde:</label><br>
+
             <textarea name="educacao_saude" rows="3" cols="60" maxlength="200"></textarea><br><br>
 
+
+
             <label>Orientações dadas:</label><br>
+
             <textarea name="orientacoes_dadas" rows="3" cols="60" maxlength="200"></textarea><br><br>
 
+
+
             <label>Encaminhamentos:</label><br>
+
             <textarea name="encaminhamentos_conduta" rows="3" cols="60" maxlength="200"></textarea></em></p>
+
           </div>
+
         </div>
+
+
 
         <div id="pagina4" class="page">
-          <div class="card">
-            <h2>14. Planejamento e Alarmes</h2>
-            <label>Próxima consulta:</label><br>
-            <input type="date" name="proxima_consulta"><br><br>
-            <p><strong>Alarmes automáticos configuráveis:</strong></p>
-            <ul style="margin-left: 20px;">
-              <li>Revisão hormonal → a cada 3 meses</li>
-              <li>Avaliação hepática → a cada 6 meses</li>
-              <li>Preventivos → anual</li>
-            </ul>
-          </div>
 
           <div class="card">
-            <h2>15. Observações Finais</h2>
-            <textarea name="observacoes_finais" rows="5" style="width:100%"></textarea>
+
+            <h2>14. Planejamento e Alarmes</h2>
+
+            <label>Próxima consulta:</label><br>
+
+            <input type="date" name="proxima_consulta"><br><br>
+
+            <p><strong>Alarmes automáticos configuráveis:</strong></p>
+
+            <ul style="margin-left: 20px;">
+
+              <li>Revisão hormonal → a cada 3 meses</li>
+
+              <li>Avaliação hepática → a cada 6 meses</li>
+
+              <li>Preventivos → anual</li>
+
+            </ul>
+
           </div>
+
+
+
+          <div class="card">
+
+            <h2>15. Observações Finais</h2>
+
+            <textarea name="observacoes_finais" rows="5" style="width:100%"></textarea>
+
+          </div>
+
+
 
           <div class="card" style="text-align: right; background-color: transparent; box-shadow: none;">
+
             <button type="submit" class="action-btn save-btn">Salvar Prontuário</button>
+
             <button type="reset" class="action-btn reset-btn" style="margin-left: 10px;">Limpar Formulário</button>
+
           </div>
+
         </div>
+
       </form>
+
     </main>
+
   </div>
 
+
+
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <script src="script.js"></script>
+
 </body>
-</html>
+
+</html> 
+

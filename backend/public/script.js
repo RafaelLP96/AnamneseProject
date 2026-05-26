@@ -503,22 +503,8 @@ function dispararAlerta(nivel, mensagem, categoria) {
 }
 
 function configurarAlertasInstantaneos() {
-  const calcularMeses = (dataString) => {
-    if (!dataString) return 0;
-    const partes = dataString.split('-');
-    if (partes.length !== 3) return 0;
-    const ano = parseInt(partes[0], 10);
-    const mes = parseInt(partes[1], 10) - 1;
-    const dia = parseInt(partes[2], 10);
-    const dataExame = new Date(ano, mes, dia);
-    if (Number.isNaN(dataExame.getTime())) return 0;
-    const hoje = new Date();
-    let meses = (hoje.getFullYear() - dataExame.getFullYear()) * 12 + (hoje.getMonth() - dataExame.getMonth());
-    if (hoje.getDate() < dataExame.getDate()) meses--;
-    return meses;
-  };
 
-  function debounce(fn, wait = 250) {
+  function debounce(fn, wait = 400) {
     let t;
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
   }
@@ -526,10 +512,8 @@ function configurarAlertasInstantaneos() {
   function limparAlertasTopico10() {
     const container = document.getElementById('alertas_topico10');
     if (container) {
-      previousAlertasHTML = container.innerHTML;
-      container.innerHTML = '';
+      container.innerHTML = ''; 
     }
-    if (typeof shownNotificacoes !== 'undefined') shownNotificacoes.clear();
   }
 
   function avaliarAlarmesCombinados() {
@@ -537,56 +521,176 @@ function configurarAlertasInstantaneos() {
     const red = [];
     const yellow = [];
 
-    const toNumber = (sel) => parseFloat(document.querySelector(sel)?.value || 0);
+    const getValue = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? el.value.trim() : '';
+    };
 
+    const toNumber = (sel) => {
+      const val = getValue(sel);
+      if (!val) return 0;
+      return parseFloat(val.replace(',', '.')) || 0;
+    };
+
+    const getMonthsSince = (dateString) => {
+      if (!dateString) return 0;
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return 0;
+      const today = new Date();
+      return (today.getFullYear() - d.getFullYear()) * 12 + (today.getMonth() - d.getMonth());
+    };
+
+    const isChecked = (sel) => {
+      const el = document.querySelector(sel);
+      return el ? el.checked : false;
+    };
+
+    // ==========================================
+    // 1. CAPTURA DOS DADOS DO FORMULÁRIO
+    // ==========================================
+    
     const tgo = toNumber('input[name="lab_tgo_res"]');
     const tgp = toNumber('input[name="lab_tgp_res"]');
     const ggt = toNumber('input[name="lab_ggt_res"]');
     const biliTotal = toNumber('input[name="lab_bilirrubina_total_res"]') || toNumber('input[name="lab_bilirrubina_res"]');
+    const biliDireta = toNumber('input[name="lab_bilirrubina_direta_res"]');
+    const biliIndireta = toNumber('input[name="lab_bilirrubina_indireta_res"]');
+
+    const dataTgo = getValue('input[name="lab_tgo_data"]');
+    const dataTgp = getValue('input[name="lab_tgp_data"]');
+    const dataGgt = getValue('input[name="lab_ggt_data"]');
+    const dataBili = getValue('input[name="lab_bilirrubina_total_data"]') || getValue('input[name="lab_bilirrubina_data"]');
+
+    const identidade = document.querySelector('input[name="identidade"]:checked')?.value || 'mulher';
+    const ggtUpper = identidade.includes('homem') ? 48 : 32;
+
     const psa = toNumber('input[name="lab_psa_total_res"]') || toNumber('input[name="psa_resultado"]');
+    const psaLivre = toNumber('input[name="lab_psa_livre_perc"]');
+    const dataPsa = getValue('input[name="lab_psa_total_data"]') || getValue('input[name="psa_data"]');
 
-    const identidade = document.querySelector('input[name="identidade"]:checked')?.value || '';
-    const ggtUpper = identidade === 'homem_trans' ? 48 : 32;
+    const papResult = getValue('select[name="papanicolau_resultado"]') || getValue('input[name="papanicolau_resultado"]');
+    const dataPap = getValue('input[name="papanicolau_data"]');
+    const dataMamo = getValue('input[name="mamografia_data"]');
 
-    const hormonio = (document.querySelector('input[name="tempo_hormonio"]')?.value || document.querySelector('input[name="med_hormonio_tempo"]')?.value || '').trim();
-    const hormonioAtivo = hormonio.length > 0;
+    // Clínica e Medicamentos
+    const hormonioAtivo = getValue('input[name="tempo_hormonio"]').length > 0 || isChecked('input[name="uso_hormonioterapia"]');
+    const hepatopatiaPrevia = isChecked('input[name="hepatopatia_previa"]');
+    const usaAntiandrogenico = isChecked('input[name="uso_antiandrogenico"]');
+    const usaAntidepressivo = isChecked('input[name="uso_antidepressivo"]');
+    const usaAnticoagulante = isChecked('input[name="uso_anticoagulante"]');
+    
+    // --- NOVOS CAMPOS ADICIONADOS CONFORME A IMAGEM ---
+    const usoEstrogenio = isChecked('input[name="uso_estrogenio"]');
+    const usoMultiplas = isChecked('input[name="uso_multiplas_medicacoes"]');
+    const altPersistentes = isChecked('input[name="alteracoes_persistentes_hepaticas"]');
 
-    // Critérios hepáticos
-    if (tgo && tgo > 120) red.push('TGO muito elevado (>120 U/L) — possível alteração hepática grave.');
-    if (tgp && tgp > 168) red.push('TGP muito elevado (>168 U/L) — possível alteração hepática grave.');
-    if (biliTotal && biliTotal > 2.0) red.push('Bilirrubina Total > 2.0 mg/dL — alteração hepática grave.');
+    // ==========================================
+    // 2. REGRAS DE ALERTA VERMELHO (Risco/Urgência)
+    // ==========================================
+    
+    let temAlteracaoHepaticaGrave = false;
+    let temAlteracaoHepaticaLeve = false;
 
-    if (red.length === 0) {
-      if (tgo && tgo > 40) yellow.push('TGO > 40 U/L (elevação leve).');
-      if (tgp && tgp > 56) yellow.push('TGP > 56 U/L (elevação leve).');
-      if (ggt && ggt > ggtUpper) yellow.push(`GGT > ${ggtUpper} U/L (elevação leve).`);
-      if (biliTotal && biliTotal > 1.2) yellow.push('Bilirrubina Total elevada (>1.2 mg/dL).');
+    if (tgo > 120) { red.push('TGO (AST) acima do valor de referência (>120 U/L) — Possível alteração hepática grave.'); temAlteracaoHepaticaGrave = true; }
+    if (tgp > 168) { red.push('TGP (ALT) acima do valor de referência (>168 U/L) — Possível alteração hepática grave.'); temAlteracaoHepaticaGrave = true; }
+    if (biliTotal > 2.0) { red.push('Bilirrubinas acima do valor de referência (>2.0 mg/dL) — Avaliar função hepática.'); temAlteracaoHepaticaGrave = true; }
+
+    // Interações Clínicas (Textos exatos do documento)
+    if (usoEstrogenio && hepatopatiaPrevia) {
+      red.push('Uso de estrogênio + hepatopatia registrada — Risco hepático aumentado.');
+    } else if (hormonioAtivo && hepatopatiaPrevia) {
+      red.push('Uso de hormonioterapia + hepatopatia cadastrada — Risco hepático aumentado.');
     }
 
-    if (hormonioAtivo && yellow.length > 0 && red.length === 0) {
-      yellow.push('Monitorar mais frequentemente devido a hormonioterapia ativa.');
+    if (altPersistentes) {
+      red.push('Alterações persistentes em exames hepáticos — Sugerir avaliação médica.');
     }
 
-    // PSA
-    if (psa && psa > 10) red.push('PSA total > 10 ng/mL (Alerta vermelho).');
-    else if (psa && psa > 4) yellow.push('PSA entre 4 e 10 ng/mL (Alerta amarelo).');
+    if (psa > 10) {
+      red.push('PSA Total > 10 ng/mL — Possível alteração prostática grave.');
+    }
+    
+    if (psaLivre > 0 && psaLivre < 25) {
+      red.push(`PSA Livre em ${psaLivre}% (< 25%) — Possível indicativo de malignidade. Necessita avaliação especializada.`);
+    }
 
+    const termosAnormais = ['ASC-US', 'ASCUS', 'LSIL', 'HSIL', 'NIC I', 'NIC II', 'NIC III', 'NICI', 'NICII', 'NICIII'];
+    if (papResult && termosAnormais.some(termo => papResult.toUpperCase().includes(termo))) {
+      red.push(`Citologia/Papanicolau com resultado anormal (${papResult}) — Necessita avaliação especializada.`);
+    }
+
+    // ==========================================
+    // 3. REGRAS DE ALERTA AMARELO E INTERAÇÕES
+    // ==========================================
+    
+    if (!temAlteracaoHepaticaGrave) {
+      if (tgo > 40 && tgo <= 120) { yellow.push('TGO (AST) acima do valor de referência — Possível alteração hepática.'); temAlteracaoHepaticaLeve = true; }
+      if (tgp > 56 && tgp <= 168) { yellow.push('TGP (ALT) acima do valor de referência — Possível alteração hepática.'); temAlteracaoHepaticaLeve = true; }
+      if (biliTotal > 1.2 && biliTotal <= 2.0) { yellow.push('Bilirrubinas acima do valor de referência — Avaliar função hepática.'); temAlteracaoHepaticaLeve = true; }
+    }
+    
+    if (ggt > ggtUpper) { yellow.push(`Gama GT acima do valor de referência (> ${ggtUpper} U/L) — Investigar sobrecarga hepática/uso de álcool.`); temAlteracaoHepaticaLeve = true; }
+    if (biliDireta > 0.3) { yellow.push('Bilirrubina Direta elevada (> 0.3 mg/dL).'); temAlteracaoHepaticaLeve = true; }
+    if (biliIndireta > 0.8) { yellow.push('Bilirrubina Indireta elevada (> 0.8 mg/dL).'); temAlteracaoHepaticaLeve = true; }
+
+    // Interações de Medicamentos Exatas
+    if (hormonioAtivo && (temAlteracaoHepaticaGrave || temAlteracaoHepaticaLeve)) {
+      red.push('Uso de hormonioterapia + alteração de enzimas hepáticas — Necessita monitoramento clínico.');
+    }
+
+    if (usaAntiandrogenico && usaAntidepressivo) {
+      yellow.push('Uso de antiandrogênico + antidepressivo — Possível interação medicamentosa.');
+    }
+
+    if (usaAnticoagulante && hormonioAtivo) {
+      yellow.push('Uso de anticoagulante + alteração hormonal — Atenção para risco cardiovascular/trombótico.');
+    }
+
+    if (usoMultiplas) {
+      yellow.push('Uso simultâneo de múltiplas medicações contínuas — Avaliar interações medicamentosas.');
+    }
+
+    // Atrasos de Exames Laboratoriais e Preventivos
+    if (hormonioAtivo && (!dataTgo && !dataTgp && !dataBili)) {
+      yellow.push('Uso prolongado de hormonioterapia sem exames recentes — Necessidade de acompanhamento laboratorial.');
+    } else if (hormonioAtivo && (getMonthsSince(dataTgo) > 12)) {
+      yellow.push('Uso prolongado de hormonioterapia sem exames recentes — Necessidade de acompanhamento laboratorial.');
+    }
+
+    if (psa > 4 && psa <= 10) yellow.push('PSA entre 4 e 10 ng/mL — Possível alteração prostática inicial.');
+
+    if (dataTgo && getMonthsSince(dataTgo) > 6) yellow.push('Exame TGO em atraso (> 6 meses) — Recomendada repetição a cada 3 a 6 meses.');
+    if (dataTgp && getMonthsSince(dataTgp) > 6) yellow.push('Exame TGP em atraso (> 6 meses) — Recomendada repetição a cada 3 a 6 meses.');
+    if (dataGgt && getMonthsSince(dataGgt) > 6) yellow.push('Exame Gama GT em atraso (> 6 meses) — Recomendada repetição a cada 3 a 6 meses.');
+    if (dataBili && getMonthsSince(dataBili) > 6) yellow.push('Exame Bilirrubina Total em atraso (> 6 meses) — Recomendada repetição.');
+    if (dataPsa && getMonthsSince(dataPsa) > 12) yellow.push('Exame PSA em atraso (> 12 meses) — Necessidade de rastreamento.');
+
+    if (dataMamo && getMonthsSince(dataMamo) > 24) {
+      yellow.push('Mamografia não realizada conforme protocolo — Necessidade de rastreamento.');
+    }
+    if (dataPap && getMonthsSince(dataPap) > 36) {
+      yellow.push('Papanicolau não realizado em paciente com colo uterino — Preventivo em atraso.');
+    }
+
+    // ==========================================
+    // 4. DISPARO VISUAL DOS ALERTAS
+    // ==========================================
     const container = document.getElementById('alertas_topico10');
     if (!container) return;
 
     if (red.length > 0) {
-      const msg = red.join(' / ') + (yellow.length > 0 ? ' / Observações adicionais: ' + yellow.join(' / ') : '');
-      dispararAlerta('vermelho', msg, 'Tópico 10');
-    } else if (yellow.length > 0) {
-      const msg = yellow.join(' / ');
-      dispararAlerta('amarelo', msg, 'Tópico 10');
+      red.forEach(msg => dispararAlerta('vermelho', msg, 'Risco Clínico'));
+      yellow.forEach(msg => dispararAlerta('amarelo', msg, 'Atenção Adicional'));
+    } 
+    else if (yellow.length > 0) {
+      yellow.forEach(msg => dispararAlerta('amarelo', msg, 'Monitoramento'));
     }
   }
 
-  const debouncedAvaliar = debounce(avaliarAlarmesCombinados, 300);
-  document.addEventListener('change', function (e) {
-    debouncedAvaliar();
-  });
+  const debouncedAvaliar = debounce(avaliarAlarmesCombinados, 400);
+  
+  document.getElementById('prontuarioForm')?.addEventListener('input', debouncedAvaliar);
+  document.getElementById('prontuarioForm')?.addEventListener('change', debouncedAvaliar);
 }
 async function baixarPDF() {
   const params = new URLSearchParams(window.location.search);
