@@ -150,21 +150,6 @@
       margin-top: 8px;
     }
 
-    .btn-voltar {
-      background: none;
-      border: 1px solid #0163a1;
-      color: #0163a1;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-
-    .btn-voltar:hover {
-      background: #0163a1;
-      color: #fff;
-    }
   </style>
 </head>
 <body>
@@ -177,10 +162,8 @@
         <div class="view-header-sub" id="subTitulo"></div>
       </div>
       <div class="no-print" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <button class="btn-voltar" onclick="history.back()">← Voltar</button>
         <button class="action-btn save-btn" onclick="window.print()">🖨️ Imprimir</button>
-        <button class="action-btn" style="background:#d97706; color:#fff;" onclick="baixarPDF()">📄 Baixar PDF</button>
-        </div>
+      </div>
     </div>
 
     <!-- Conteúdo do prontuário -->
