@@ -327,6 +327,38 @@ router.get('/:id/fotos', async (req, res) => {
   }
 });
 
+// PUT /prontuarios/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    // Preserve existing fotos if not provided in update
+    const existingDados = prontuario.dados || {};
+    const updatedDados = Object.assign({}, dados || {});
+    if (!Array.isArray(updatedDados.fotos) && Array.isArray(existingDados.fotos)) {
+      updatedDados.fotos = existingDados.fotos;
+    }
+
+    const updateData = {
+      nome_social: nome_social ?? prontuario.nome_social,
+      identidade_genero: identidade_genero ?? prontuario.identidade_genero,
+      data_consulta: data_consulta ? new Date(data_consulta) : prontuario.data_consulta,
+      data_proxima_consulta: data_proxima_consulta ? new Date(data_proxima_consulta) : prontuario.data_proxima_consulta,
+      dados: updatedDados
+    };
+
+    const updated = await prisma.prontuarios.update({ where: { id: prontuario.id }, data: updateData });
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar prontuário:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar prontuário' });
+  }
+});
+
 // DELETE /prontuarios/:id
 router.delete('/:id', async (req, res) => {
   try {

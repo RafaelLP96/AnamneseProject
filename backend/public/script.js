@@ -58,6 +58,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // Carregar para edição apenas após a página terminar de inicializar
+  const params = new URLSearchParams(window.location.search);
+  const editId = params.get('id');
+  if (editId) {
+    carregarProntuarioParaEdicao(editId);
+  }
+
   // Configurar alertas automáticos
   configurarAlertasInstantaneos();
 });
@@ -252,9 +259,11 @@ async function salvarFormulario(e) {
   }
 
   try {
-    const endpoint = `${window.location.origin}/prontuarios`;
+    const isUpdate = !!editingId;
+    const endpoint = isUpdate ? `${window.location.origin}/prontuarios/${editingId}` : `${window.location.origin}/prontuarios`;
+    const method = isUpdate ? 'PUT' : 'POST';
     const res = await fetch(endpoint, {
-      method: 'POST',
+      method,
       headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
       body: JSON.stringify(payload)
     });
@@ -292,7 +301,15 @@ async function salvarFormulario(e) {
       console.warn('Erro ao enviar fotos:', err);
     }
 
-    mostrarNotificacao('Prontuário enviado com sucesso.', 'sucesso');
+    if (isUpdate) {
+      mostrarNotificacao('Prontuário atualizado com sucesso.', 'sucesso');
+      // limpar estado de edição e remover id da URL para evitar confusão
+      editingId = null;
+      try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    } else {
+      mostrarNotificacao('Prontuário enviado com sucesso.', 'sucesso');
+    }
+
     form.reset();
     const contentDiv = document.querySelector('.content');
     if (contentDiv) contentDiv.scrollTop = 0;
@@ -350,7 +367,7 @@ async function mostrarFormulariosEnviados() {
         <div class="form-item" data-id="${p.id}" style="border: 1px solid #ddd; border-radius: 6px; padding: 15px; margin-bottom: 10px;">
           <div class="form-item-header" style="display: flex; justify-content: space-between; align-items: center;">
             <div class="form-item-info">
-              <div class="form-item-title" style="font-weight: bold; color: #0163a1;">${p.nome_social}</div>
+              <div class="form-item-title" data-id="${p.id}" style="font-weight: bold; color: #0163a1;">${p.nome_social}</div>
               <div class="form-item-date" style="font-size: 12px; color: #999;">Consulta: ${dataConsulta}</div>
               <div class="form-item-date" style="font-size: 12px; color: #999;">Próxima: ${dataProxima}</div>
               <div class="form-item-date" style="font-size: 12px; color: #999;">Salvo em: ${dataCriacao}</div>
@@ -371,6 +388,15 @@ async function mostrarFormulariosEnviados() {
     });
     html += '</div>';
     modalBody.innerHTML = html;
+
+    // adicionar click nos títulos para abrir no formulário para edição
+    modalBody.querySelectorAll('.form-item-title').forEach(el => {
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', (e) => {
+        const id = el.dataset.id;
+        if (id) window.location.href = `/formulario.html?id=${id}`;
+      });
+    });
 
     // adicionar handlers para os botões de ação
     modalBody.querySelectorAll('.print-btn').forEach(btn => {
@@ -612,5 +638,52 @@ async function baixarPDF() {
 
   } catch (err) {
     alert('Erro ao baixar PDF: ' + err.message);
+  }
+}
+
+let editingId = null;
+
+async function carregarProntuarioParaEdicao(id) {
+  try {
+    const token = obterToken();
+    const res = await fetch(`/prontuarios/${id}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) throw new Error('Não foi possível obter prontuário para edição');
+    const data = await res.json();
+
+    editingId = id;
+    console.log('carregarProntuarioParaEdicao: editingId set to', editingId);
+
+    const form = document.getElementById('prontuarioForm');
+    if (!form) return;
+
+    // Preencher campos simples
+    form.querySelector('[name="nome_social"]').value = data.nome_social || '';
+    if (form.querySelector('[name="nome_civil"]')) form.querySelector('[name="nome_civil"]').value = data.dados?.nome_civil || '';
+    if (form.querySelector('[name="pronome"]')) form.querySelector('[name="pronome"]').value = data.dados?.pronome || '';
+    if (form.querySelector('[name="identidade"]')) {
+      const radios = form.querySelectorAll('[name="identidade"]');
+      radios.forEach(r => { r.checked = (data.identidade_genero === r.value || data.dados?.identidade === r.value); });
+    }
+    if (form.querySelector('[name="idade"]')) form.querySelector('[name="idade"]').value = data.dados?.idade || '';
+    if (form.querySelector('[name="contato"]')) form.querySelector('[name="contato"]').value = data.dados?.contato || '';
+    if (form.querySelector('[name="profissional"]')) form.querySelector('[name="profissional"]').value = data.dados?.profissional || '';
+    if (form.querySelector('[name="data_consulta"]')) form.querySelector('[name="data_consulta"]').value = data.data_consulta ? new Date(data.data_consulta).toISOString().slice(0,10) : '';
+    if (form.querySelector('[name="data_proxima_consulta"]')) form.querySelector('[name="data_proxima_consulta"]').value = data.data_proxima_consulta ? new Date(data.data_proxima_consulta).toISOString().slice(0,10) : '';
+
+    // Campos de texto maiores
+    if (form.querySelector('[name="queixa_principal"]')) form.querySelector('[name="queixa_principal"]').value = data.dados?.queixa_principal || '';
+    if (form.querySelector('[name="hda"]')) form.querySelector('[name="hda"]').value = data.dados?.hda || '';
+    if (form.querySelector('[name="tempo_hormonio"]')) form.querySelector('[name="tempo_hormonio"]').value = data.dados?.tempo_hormonio || '';
+
+    // alterar texto do botão enviar
+    const submitBtn = form.querySelector('button[type="submit"], input[type="submit"]');
+    if (submitBtn) submitBtn.textContent = 'Atualizar prontuário';
+
+    console.log('Prontuário carregado para edição:', id);
+    mostrarNotificacao('Prontuário carregado para edição.', 'sucesso');
+
+  } catch (err) {
+    console.error('Erro ao carregar prontuário para edição:', err);
+    mostrarNotificacao('Não foi possível carregar prontuário para edição.', 'erro');
   }
 }
