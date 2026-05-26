@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  
 }
 
 datasource db {
@@ -17,7 +16,7 @@ model prontuarios {
   criado_em             DateTime? @default(now()) @db.Timestamptz(6)
   atualizado_em         DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
   dados                 Json      @default("{}")
-  registrado_por        String
+  registrado_por        String    @db.Uuid
   usuarios              usuarios  @relation(fields: [registrado_por], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([dados], map: "idx_prontuarios_dados_gin", type: Gin)

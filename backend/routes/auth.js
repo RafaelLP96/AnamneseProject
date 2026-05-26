@@ -13,6 +13,9 @@ router.post('/cadastro', async (req, res) => {
   if (!nome || !username || !senha)
     return res.status(400).json({ erro: 'Preencha todos os campos' });
 
+  if (senha.length < 6)
+    return res.status(400).json({ erro: 'A senha precisa ter pelo menos 6 caracteres' });
+
   try {
     const existe = await prisma.usuarios.findUnique({ where: { username } });
     if (existe)

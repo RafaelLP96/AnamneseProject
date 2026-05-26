@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visualização do Prontuário</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    @media print {
+      .card { box-shadow: none; border: none; }
+      body { background: #fff; overflow: auto; }
+      .no-print { display: none !important; }
+      .layout { display: block; }
+      .view-container { max-width: 100%; margin: 0; padding: 0; }
+    }
+
+    body { overflow: auto; }
+
+    .view-container { max-width: 900px; margin: 20px auto; padding: 0 16px 40px; }
+
+    .view-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .view-header h1 { font-size: 24px; color: #0163a1; }
+    .view-header-sub { color: #666; font-size: 14px; margin-top: 4px; }
+
+    .view-section { margin-top: 16px; }
+
+    .field-label { font-weight: bold; color: #0163a1; }
+
+    .field-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .field-row .field-label { min-width: 180px; }
+
+    pre.json-dump {
+      background: #f7f7f7;
+      padding: 12px;
+      border-radius: 6px;
+      overflow: auto;
+      font-size: 12px;
+    }
+
+    /* Galeria de fotos */
+    .photos-section { margin-top: 20px; }
+
+    .photos-group { margin-top: 16px; }
+
+    .photos-group-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #555;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .photos-grid {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .photo-card {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .photo-card img {
+      width: 160px;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: block;
+    }
+
+    .photo-card img:hover {
+      transform: scale(1.03);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .photo-loading {
+      width: 160px;
+      height: 160px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: #f5f5f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aaa;
+      font-size: 12px;
+    }
+
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    .lightbox.open { display: flex; }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+
+    .lightbox-caption {
+      color: #fff;
+      margin-top: 12px;
+      font-size: 14px;
+      text-transform: capitalize;
+    }
+
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 28px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 36px;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .fotos-vazio {
+      color: #aaa;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .btn-voltar {
+      background: none;
+      border: 1px solid #0163a1;
+      color: #0163a1;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .btn-voltar:hover {
+      background: #0163a1;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="view-container">
+
+    <!-- Cabeçalho -->
+    <div class="view-header">
+      <div>
+        <h1 id="nomeTitulo">Prontuário</h1>
+        <div class="view-header-sub" id="subTitulo"></div>
+      </div>
+      <div class="no-print" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <button class="btn-voltar" onclick="history.back()">← Voltar</button>
+        <button class="action-btn save-btn" onclick="window.print()">🖨️ Imprimir</button>
+        <button class="action-btn" style="background:#d97706; color:#fff;" onclick="baixarPDF()">📄 Baixar PDF</button>
+        </div>
+    </div>
+
+    <!-- Conteúdo do prontuário -->
+    <div id="conteudo"></div>
+
+    <!-- Seção de fotos -->
+    <div id="secaoFotos" class="card photos-section" style="display:none;">
+      <h2>Fotos anexadas</h2>
+      <div id="fotosConteudo"></div>
+    </div>
+
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox" onclick="fecharLightbox(event)">
+    <button class="lightbox-close" onclick="fecharLightbox()">&times;</button>
+    <img id="lightboxImg" src="" alt="">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+
+  <script>
+    function obterToken() { return localStorage.getItem('token'); }
+
+    function humanize(key) {
+      return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return d.toLocaleDateString('pt-BR');
+    }
+
+    // ======== LIGHTBOX ========
+    function abrirLightbox(src, caption) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightboxCaption').textContent = humanize(caption || '');
+      document.getElementById('lightbox').classList.add('open');
+    }
+
+    function fecharLightbox(e) {
+      if (!e || e.target === document.getElementById('lightbox') || e.target.classList.contains('lightbox-close')) {
+        document.getElementById('lightbox').classList.remove('open');
+        document.getElementById('lightboxImg').src = '';
+      }
+    }
+
+    // ======== CARREGAR FOTOS ========
+    async function carregarFotos(id) {
+      const token = obterToken();
+      try {
+        const res = await fetch(`/prontuarios/${id}/fotos`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+
+        if (!res.ok) return;
+        const fotos = await res.json();
+
+        if (!fotos || fotos.length === 0) return;
+
+        // Agrupa por descrição (nome do campo)
+        const grupos = {};
+        fotos.forEach(f => {
+          const grupo = f.descricao || 'sem_descricao';
+          if (!grupos[grupo]) grupos[grupo] = [];
+          grupos[grupo].push(f);
+        });
+
+        const secao   = document.getElementById('secaoFotos');
+        const conteudo = document.getElementById('fotosConteudo');
+        secao.style.display = 'block';
+        conteudo.innerHTML = '';
+
+        Object.entries(grupos).forEach(([grupo, itens]) => {
+          const groupDiv = document.createElement('div');
+          groupDiv.className = 'photos-group';
+
+          groupDiv.innerHTML = `<div class="photos-group-title">${humanize(grupo)}</div>`;
+
+          const grid = document.createElement('div');
+          grid.className = 'photos-grid';
+
+          itens.forEach(foto => {
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+
+            if (foto.url) {
+              const img = document.createElement('img');
+              img.src = foto.url;
+              img.alt = foto.descricao || 'foto';
+              img.title = 'Clique para ampliar';
+              img.addEventListener('click', () => abrirLightbox(foto.url, foto.descricao));
+              card.appendChild(img);
+            } else {
+              card.innerHTML = `<div class="photo-loading">Sem URL</div>`;
+            }
+
+            grid.appendChild(card);
+          });
+
+          groupDiv.appendChild(grid);
+          conteudo.appendChild(groupDiv);
+        });
+
+      } catch (err) {
+        console.warn('Erro ao carregar fotos:', err);
+      }
+    }
+
+    // ======== CARREGAR PRONTUÁRIO ========
+    async function carregar() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+
+      if (!id) {
+        document.getElementById('conteudo').innerHTML = '<p style="color:red">ID do prontuário não fornecido na URL (?id=)</p>';
+        return;
+      }
+
+      try {
+        const token = obterToken();
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const res = await fetch(`/prontuarios/${id}`, { headers });
+        if (!res.ok) throw new Error('Não foi possível obter o prontuário (autenticação necessária)');
+        const data = await res.json();
+
+        document.getElementById('nomeTitulo').textContent = data.nome_social || 'Prontuário';
+
+        const subt = [];
+        if (data.identidade_genero) subt.push(data.identidade_genero);
+        if (data.data_consulta)        subt.push('Consulta: ' + formatDate(data.data_consulta));
+        if (data.data_proxima_consulta) subt.push('Próxima: ' + formatDate(data.data_proxima_consulta));
+        document.getElementById('subTitulo').textContent = subt.join(' • ');
+
+        const container = document.getElementById('conteudo');
+        container.innerHTML = '';
+
+        // Identificação
+        const idSection = document.createElement('div');
+        idSection.className = 'card view-section';
+        idSection.innerHTML = `
+          <h2>1. Identificação</h2>
+          <div class="field-row"><span class="field-label">Nome social:</span> <span>${data.nome_social || '—'}</span></div>
+          <div class="field-row"><span class="field-label">Nome civil:</span> <span>${data.dados?.nome_civil || '—'}</span></div>
+          <div class="field-row"><span class="field-label">Pronome:</span> <span>${data.dados?.pronome || '—'}</span></div>
+          <div class="field-row"><span class="field-label">Identidade de gênero:</span> <span>${data.identidade_genero || '—'}</span></div>
+          <div class="field-row"><span class="field-label">Idade:</span> <span>${data.dados?.idade || '—'}</span></div>
+          <div class="field-row"><span class="field-label">Data da consulta:</span> <span>${formatDate(data.data_consulta)}</span></div>
+          <div class="field-row"><span class="field-label">Próxima consulta:</span> <span>${formatDate(data.data_proxima_consulta) || '—'}</span></div>
+        `;
+        container.appendChild(idSection);
+
+        // Dados clínicos
+        const dados = { ...(data.dados || {}) };
+
+        // Remove campos já exibidos na identificação e fotos
+        ['nome_civil', 'pronome', 'idade', 'nome_social', 'identidade', 'identidade_genero',
+         'data_consulta', 'data_proxima_consulta', 'fotos'].forEach(k => delete dados[k]);
+
+        // Campos principais com label amigável
+        const principais = {
+          queixa_principal: 'Queixa Principal',
+          hda: 'História da Doença Atual',
+          tempo_hormonio: 'Tempo de Hormonioterapia',
+          alergias: 'Alergias',
+          contato: 'Contato',
+          profissional: 'Profissional Responsável'
+        };
+
+        Object.entries(principais).forEach(([k, label]) => {
+          if (dados[k] !== undefined && dados[k] !== '') {
+            const s = document.createElement('div');
+            s.className = 'card view-section';
+            s.innerHTML = `<h2>${label}</h2><div>${dados[k]}</div>`;
+            container.appendChild(s);
+            delete dados[k];
+          }
+        });
+
+        // Restante dos dados
+        const remainingKeys = Object.keys(dados).sort();
+        if (remainingKeys.length) {
+          const s = document.createElement('div');
+          s.className = 'card view-section';
+          s.innerHTML = '<h2>Outros dados registrados</h2>';
+
+          remainingKeys.forEach(key => {
+            const val = dados[key];
+            if (val === '' || val === null || val === undefined) return;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'field-row';
+            wrap.style.marginTop = '8px';
+
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
+              if (val.valor !== undefined || val.data !== undefined) {
+                wrap.innerHTML = `<span class="field-label">${humanize(key)}:</span> <span>${val.valor ?? ''} ${val.data ? '(' + formatDate(val.data) + ')' : ''}</span>`;
+              } else {
+                wrap.innerHTML = `<span class="field-label">${humanize(key)}:</span><pre class="json-dump">${JSON.stringify(val, null, 2)}</pre>`;
+              }
+            } else if (Array.isArray(val)) {
+              wrap.innerHTML = `<span class="field-label">${humanize(key)}:</span> <span>${val.join(', ')}</span>`;
+            } else {
+              wrap.innerHTML = `<span class="field-label">${humanize(key)}:</span> <span>${val}</span>`;
+            }
+
+            s.appendChild(wrap);
+          });
+
+          container.appendChild(s);
+        }
+
+        // Carregar fotos separadamente
+        await carregarFotos(id);
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('conteudo').innerHTML = `<p style="color:red">Erro: ${err.message}</p>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', carregar);
+    
+  </script>
+  
+</body>
+</html>
