@@ -1,5 +1,6 @@
 import express from 'express';
 import multer   from 'multer';
+import PDFDocument from 'pdfkit';
 import { PrismaClient } from '@prisma/client';
 import supabase from '../src/storage.js';
 
@@ -10,6 +11,12 @@ const upload  = multer({ storage: multer.memoryStorage() });
 // POST /prontuarios
 router.post('/', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
+
+  console.log('POST /prontuarios:');
+  console.log('- usuario.id:', req.usuario?.id);
+  console.log('- nome_social:', nome_social);
+  console.log('- identidade_genero:', identidade_genero);
+  console.log('- data_consulta:', data_consulta);
 
   if (!nome_social || !data_consulta)
     return res.status(400).json({ erro: 'nome_social e data_consulta são obrigatórios' });
@@ -26,9 +33,10 @@ router.post('/', async (req, res) => {
       }
     });
 
+    console.log('- Prontuário criado com ID:', prontuario.id);
     res.status(201).json(prontuario);
   } catch (err) {
-    console.error(err);
+    console.error('- Erro ao salvar:', err);
     res.status(500).json({ erro: 'Erro ao salvar prontuário' });
   }
 });
@@ -36,6 +44,8 @@ router.post('/', async (req, res) => {
 // GET /prontuarios — lista prontuários do usuário logado
 router.get('/', async (req, res) => {
   try {
+    console.log('GET /prontuarios - usuario.id:', req.usuario?.id);
+
     const prontuarios = await prisma.prontuarios.findMany({
       where: { registrado_por: req.usuario.id },
       orderBy: { data_consulta: 'desc' },
@@ -48,111 +58,17 @@ router.get('/', async (req, res) => {
         criado_em: true
       }
     });
+
+    console.log('Prontuários encontrados:', prontuarios.length);
     res.json(prontuarios);
   } catch (err) {
+    console.error('Erro ao buscar prontuários:', err);
     res.status(500).json({ erro: 'Erro ao buscar prontuários' });
   }
 });
 
 // GET /prontuarios/:id
 router.get('/:id', async (req, res) => {
-  try {
-    const prontuario = await prisma.prontuarios.findUnique({
-      where: { id: req.params.id }
-    });
-    if (!prontuario)
-      return res.status(404).json({ erro: 'Prontuário não encontrado' });
-
-    res.json(prontuario);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar prontuário' });
-  }
-});
-
-// PATCH /prontuarios/:id
-router.patch('/:id', async (req, res) => {
-  const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
-
-  try {
-    const prontuario = await prisma.prontuarios.update({
-      where: { id: req.params.id },
-      data: {
-        ...(nome_social           && { nome_social }),
-        ...(identidade_genero     && { identidade_genero }),
-        ...(data_consulta         && { data_consulta: new Date(data_consulta) }),
-        ...(data_proxima_consulta && { data_proxima_consulta: new Date(data_proxima_consulta) }),
-        ...(dados                 && { dados })
-      }
-    });
-    res.json(prontuario);
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao atualizar prontuário' });
-  }
-});
-
-// DELETE /prontuarios/:id
-router.delete('/:id', async (req, res) => {
-  try {
-    await prisma.prontuarios.delete({ where: { id: req.params.id } });
-    res.status(204).send();
-  } catch (err) {
-    res.status(500).json({ erro: 'Erro ao deletar prontuário' });
-  }
-});
-
-// POST /prontuarios/:id/fotos
-router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
-  if (!req.file)
-    return res.status(400).json({ erro: 'Nenhuma foto enviada' });
-
-  const prontuario = await prisma.prontuarios.findUnique({
-    where: { id: req.params.id }
-  });
-
-  if (!prontuario)
-    return res.status(404).json({ erro: 'Prontuário não encontrado' });
-
-  if (prontuario.registrado_por !== req.usuario.id)
-    return res.status(403).json({ erro: 'Acesso negado' });
-
-  const ext     = req.file.originalname.split('.').pop();
-  const caminho = `${req.params.id}/${Date.now()}.${ext}`;
-
-  const { error } = await supabase.storage
-    .from('fotos-prontuarios')
-    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype });
-
-  if (error) {
-    console.error('Supabase upload error:', error);
-    return res.status(500).json({ erro: 'Erro ao fazer upload', detalhes: error.message });
-  }
-
-  const { data, error: signedUrlError } = await supabase.storage
-    .from('fotos-prontuarios')
-    .createSignedUrl(caminho, 3600);
-
-  if (signedUrlError) {
-    console.error('Supabase signed URL error:', signedUrlError);
-    return res.status(500).json({ erro: 'Erro ao gerar URL de download', detalhes: signedUrlError.message });
-  }
-
-  const fotosAtuais = prontuario.dados?.fotos ?? [];
-
-  await prisma.prontuarios.update({
-    where: { id: req.params.id },
-    data: {
-      dados: {
-        ...prontuario.dados,
-        fotos: [...fotosAtuais, { caminho, descricao: req.body.descricao ?? '' }]
-      }
-    }
-  });
-
-  res.status(201).json({ url: data.signedUrl, caminho });
-});
-
-// GET /prontuarios/:id/fotos
-router.get('/:id/fotos', async (req, res) => {
   try {
     const prontuario = await prisma.prontuarios.findUnique({
       where: { id: req.params.id }
@@ -164,18 +80,161 @@ router.get('/:id/fotos', async (req, res) => {
     if (prontuario.registrado_por !== req.usuario.id)
       return res.status(403).json({ erro: 'Acesso negado' });
 
-    const fotos = prontuario?.dados?.fotos ?? [];
-
-    const urls = await Promise.all(fotos.map(async (foto) => {
-      const { data } = await supabase.storage
-        .from('fotos-prontuarios')
-        .createSignedUrl(foto.caminho, 3600);
-      return { ...foto, url: data.signedUrl };
-    }));
-
-    res.json(urls);
+    res.json(prontuario);
   } catch (err) {
-    res.status(500).json({ erro: 'Erro ao buscar fotos' });
+    res.status(500).json({ erro: 'Erro ao buscar prontuário' });
+  }
+});
+
+// GET /prontuarios/:id/pdf
+router.get('/:id/pdf', async (req, res) => {
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({
+      where: { id: req.params.id },
+      include: {
+        usuarios: {
+          select: { nome: true, username: true }
+        }
+      }
+    });
+
+    if (!prontuario)
+      return res.status(404).json({ erro: 'Prontuário não encontrado' });
+
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="prontuario-${prontuario.nome_social}.pdf"`);
+
+    const doc   = new PDFDocument({ margin: 50, size: 'A4' });
+    const dados = prontuario.dados || {};
+    doc.pipe(res);
+
+    // helpers
+    const secao = (titulo) => {
+      doc.moveDown(0.8);
+      doc.fontSize(13).fillColor('#0163a1').text(titulo);
+      doc.moveTo(50, doc.y + 2).lineTo(545, doc.y + 2).strokeColor('#cccccc').lineWidth(1).stroke();
+      doc.moveDown(0.4);
+    };
+
+    const campo = (label, valor) => {
+      if (valor === undefined || valor === null || valor === '') return;
+      doc.fontSize(10)
+        .fillColor('#0163a1').text(`${label}: `, { continued: true })
+        .fillColor('#333333').text(String(valor));
+    };
+
+    // Cabeçalho
+    doc.fontSize(18).fillColor('#0163a1').text('Prontuário Eletrônico de Enfermagem', { align: 'center' });
+    doc.moveDown(0.3);
+    doc.fontSize(10).fillColor('#888888').text('Cuidado integral e humanizado para pessoas trans', { align: 'center' });
+    doc.moveDown(0.5);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#81d994').lineWidth(2).stroke();
+    doc.moveDown(1);
+
+    // 1. Identificação
+    secao('1. Identificação');
+    campo('Nome social',          prontuario.nome_social);
+    campo('Nome civil',           dados.nome_civil);
+    campo('Pronome',              dados.pronome);
+    campo('Identidade de gênero', prontuario.identidade_genero);
+    campo('Idade',                dados.idade);
+    campo('Contato',              dados.contato);
+    campo('Data da consulta',     prontuario.data_consulta
+      ? new Date(prontuario.data_consulta).toLocaleDateString('pt-BR') : '');
+    campo('Próxima consulta',     prontuario.data_proxima_consulta
+      ? new Date(prontuario.data_proxima_consulta).toLocaleDateString('pt-BR') : '');
+    campo('Profissional responsável', prontuario.usuarios?.nome || prontuario.usuarios?.username || '');
+
+    // 2. Queixa principal e HDA
+    if (dados.queixa_principal || dados.hda) {
+      secao('2. Queixa Principal e HDA');
+      campo('Queixa principal', dados.queixa_principal);
+      campo('HDA',              dados.hda);
+    }
+
+    // 3. Hormonioterapia
+    if (dados.tempo_hormonio || dados.med_hormonio_tempo) {
+      secao('3. Hormonioterapia');
+      campo('Tempo de uso', dados.tempo_hormonio || dados.med_hormonio_tempo);
+    }
+
+    // Demais campos
+    const ignorar = new Set([
+      'nome_civil', 'pronome', 'idade', 'contato', 'nome_social',
+      'identidade', 'identidade_genero', 'data_consulta', 'data_proxima_consulta',
+      'fotos', 'queixa_principal', 'hda', 'tempo_hormonio', 'med_hormonio_tempo'
+    ]);
+
+    const restantes = Object.entries(dados).filter(
+      ([k, v]) => !ignorar.has(k) && v !== '' && v !== null && v !== undefined
+    );
+
+    if (restantes.length) {
+      secao('Outros dados registrados');
+      restantes.forEach(([key, val]) => {
+        const label = key.replace(/_/g, ' ');
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          const texto = val.valor !== undefined
+            ? `${val.valor}${val.data ? ' (' + new Date(val.data).toLocaleDateString('pt-BR') + ')' : ''}`
+            : JSON.stringify(val);
+          campo(label, texto);
+        } else if (Array.isArray(val)) {
+          campo(label, val.join(', '));
+        } else {
+          campo(label, val);
+        }
+      });
+    }
+
+    // Fotos
+    const fotos = dados.fotos ?? [];
+    if (fotos.length) {
+      secao('Fotos anexadas');
+
+      // Busca URLs assinadas para cada foto
+      for (const foto of fotos) {
+        try {
+          const { data: signed } = await supabase.storage
+            .from('fotos-prontuarios')
+            .createSignedUrl(foto.caminho, 60);
+
+          if (!signed?.signedUrl) continue;
+
+          // Baixa a imagem como buffer
+          const imgRes  = await fetch(signed.signedUrl);
+          const buffer  = Buffer.from(await imgRes.arrayBuffer());
+          const descricao = foto.descricao
+            ? foto.descricao.replace(/_/g, ' ')
+            : 'foto';
+
+          if (foto.descricao) {
+            doc.fontSize(9).fillColor('#555555').text(descricao, { align: 'left' });
+            doc.moveDown(0.2);
+          }
+
+          doc.image(buffer, { width: 200, height: 200, fit: [200, 200] });
+          doc.moveDown(0.5);
+        } catch (err) {
+          console.warn('Erro ao inserir foto no PDF:', err.message);
+        }
+      }
+    }
+
+    // Rodapé
+    doc.moveDown(2);
+    doc.moveTo(50, doc.y).lineTo(545, doc.y).strokeColor('#eeeeee').lineWidth(1).stroke();
+    doc.moveDown(0.5);
+    doc.fontSize(8).fillColor('#aaaaaa')
+      .text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, { align: 'right' });
+
+    doc.end();
+
+  } catch (err) {
+    console.error('Erro ao gerar PDF:', err);
+    res.status(500).json({ erro: 'Erro ao gerar PDF' });
   }
 });
 

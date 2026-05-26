@@ -570,6 +570,18 @@ tr:hover {
   gap: 12px;
 }
 
+/* Centralizar a lista dentro do modal */
+.forms-list {
+  align-items: center;
+}
+
+.form-item {
+  width: 100%;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .form-item {
   padding: 15px;
   border: 1px solid #ddd;

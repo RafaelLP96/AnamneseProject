@@ -280,35 +280,62 @@
       }
     }
 
-    function fazerLogin() {
-      const usuario = document.getElementById('usuario').value.trim();
+    async function fazerLogin() {
+      const username = document.getElementById('usuario').value.trim();
       const senha = document.getElementById('senha').value.trim();
       const errorMsg = document.getElementById('errorMsg');
 
-      if (!usuario || !senha) {
+      if (!username || !senha) {
         errorMsg.textContent = 'Preencha o usuário e a senha.';
         errorMsg.style.display = 'block';
         return;
       }
 
-      // Simulação de login — substitua pela integração real
-      if (usuario === 'admin' && senha === '1234') {
-        window.location.href = 'index.html';
-      } else {
-        errorMsg.textContent = 'Usuário ou senha inválidos.';
+      try {
+        const resposta = await fetch('/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ username, senha })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          errorMsg.textContent = dados.erro || 'Erro ao fazer login';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        // Armazenar token no localStorage
+        localStorage.setItem('token', dados.token);
+        localStorage.setItem('usuario', JSON.stringify(dados.usuario));
+
+        // Redirecionar para a página principal
+        window.location.href = '/formulario.html';
+      } catch (erro) {
+        console.error('Erro:', erro);
+        errorMsg.textContent = 'Erro ao conectar ao servidor';
         errorMsg.style.display = 'block';
       }
     }
 
-    function fazerCadastro() {
+    async function fazerCadastro() {
       const nome = document.getElementById('reg-nome').value.trim();
-      const usuario = document.getElementById('reg-usuario').value.trim();
+      const username = document.getElementById('reg-usuario').value.trim();
       const senha = document.getElementById('reg-senha').value.trim();
       const confirma = document.getElementById('reg-confirma').value.trim();
       const errorMsg = document.getElementById('errorMsg');
 
-      if (!nome || !usuario || !senha || !confirma) {
+      if (!nome || !username || !senha || !confirma) {
         errorMsg.textContent = 'Preencha todos os campos.';
+        errorMsg.style.display = 'block';
+        return;
+      }
+
+      if (senha.length < 6) {
+        errorMsg.textContent = 'A senha precisa ter pelo menos 6 caracteres.';
         errorMsg.style.display = 'block';
         return;
       }
@@ -319,9 +346,33 @@
         return;
       }
 
-      // Simulação de cadastro — substitua pela integração real
-      alert('Conta criada com sucesso! Faça login para continuar.');
-      mostrarAba('login');
+      try {
+        const resposta = await fetch('/auth/cadastro', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ nome, username, senha })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          errorMsg.textContent = dados.erro || 'Erro ao cadastrar';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        errorMsg.style.display = 'none';
+        alert('Conta criada com sucesso! Faça login para continuar.');
+        mostrarAba('login');
+        
+        
+      } catch (erro) {
+        console.error('Erro:', erro);
+        errorMsg.textContent = 'Erro ao conectar ao servidor';
+        errorMsg.style.display = 'block';
+      }
     }
 
     // Login ao pressionar Enter
