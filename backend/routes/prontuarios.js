@@ -238,4 +238,157 @@ router.get('/:id/pdf', async (req, res) => {
   }
 });
 
+// POST /prontuarios/:id/fotos
+router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    if (!req.file) return res.status(400).json({ erro: 'Nenhuma foto recebida' });
+
+    const nomeArquivo = req.file.originalname.replace(/\s+/g, '_');
+    const caminho = `${prontuario.id}/${Date.now()}-${nomeArquivo}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('fotos-prontuarios')
+      .upload(caminho, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false
+      });
+
+    if (uploadError) {
+      console.error('Erro ao salvar foto no storage:', uploadError);
+      return res.status(500).json({ erro: 'Erro ao salvar foto' });
+    }
+
+    const dados = prontuario.dados || {};
+    const fotos = Array.isArray(dados.fotos) ? dados.fotos : [];
+    const novaFoto = {
+      descricao: req.body.descricao || 'foto',
+      caminho,
+      nome: req.file.originalname,
+      tipo: req.file.mimetype,
+      enviado_em: new Date().toISOString()
+    };
+
+    dados.fotos = [...fotos, novaFoto];
+
+    await prisma.prontuarios.update({
+      where: { id: prontuario.id },
+      data: { dados }
+    });
+
+    res.status(201).json(novaFoto);
+  } catch (err) {
+    console.error('Erro ao receber foto:', err);
+    res.status(500).json({ erro: 'Erro ao processar upload da foto' });
+  }
+});
+
+// GET /prontuarios/:id/fotos
+router.get('/:id/fotos', async (req, res) => {
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    const dados = prontuario.dados || {};
+    const fotos = Array.isArray(dados.fotos) ? dados.fotos : [];
+    const resultado = [];
+
+    for (const foto of fotos) {
+      if (!foto?.caminho) continue;
+      try {
+        const { data: signed, error: signedError } = await supabase.storage
+          .from('fotos-prontuarios')
+          .createSignedUrl(foto.caminho, 60);
+
+        if (signedError || !signed?.signedUrl) {
+          console.warn('Não foi possível gerar URL assinada para foto:', signedError);
+          continue;
+        }
+
+        resultado.push({
+          ...foto,
+          url: signed.signedUrl
+        });
+      } catch (err) {
+        console.warn('Erro ao gerar URL da foto:', err);
+      }
+    }
+
+    res.json(resultado);
+  } catch (err) {
+    console.error('Erro ao buscar fotos:', err);
+    res.status(500).json({ erro: 'Erro ao buscar fotos' });
+  }
+});
+
+// PUT /prontuarios/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    // Preserve existing fotos if not provided in update
+    const existingDados = prontuario.dados || {};
+    const updatedDados = Object.assign({}, dados || {});
+    if (!Array.isArray(updatedDados.fotos) && Array.isArray(existingDados.fotos)) {
+      updatedDados.fotos = existingDados.fotos;
+    }
+
+    const updateData = {
+      nome_social: nome_social ?? prontuario.nome_social,
+      identidade_genero: identidade_genero ?? prontuario.identidade_genero,
+      data_consulta: data_consulta ? new Date(data_consulta) : prontuario.data_consulta,
+      data_proxima_consulta: data_proxima_consulta ? new Date(data_proxima_consulta) : prontuario.data_proxima_consulta,
+      dados: updatedDados
+    };
+
+    const updated = await prisma.prontuarios.update({ where: { id: prontuario.id }, data: updateData });
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar prontuário:', err);
+    res.status(500).json({ erro: 'Erro ao atualizar prontuário' });
+  }
+});
+
+// DELETE /prontuarios/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    const dados = prontuario.dados || {};
+    const fotos = Array.isArray(dados.fotos) ? dados.fotos : [];
+
+    // Remover arquivos do storage (se existirem)
+    try {
+      const caminhos = fotos.map(f => f.caminho).filter(Boolean);
+      if (caminhos.length) {
+        const { error } = await supabase.storage.from('fotos-prontuarios').remove(caminhos);
+        if (error) console.warn('Erro ao remover arquivos do storage:', error.message || error);
+      }
+    } catch (err) {
+      console.warn('Erro ao remover fotos do storage:', err);
+    }
+
+    // Deletar registro do banco
+    await prisma.prontuarios.delete({ where: { id: prontuario.id } });
+
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error('Erro ao excluir prontuário:', err);
+    res.status(500).json({ erro: 'Erro ao excluir prontuário' });
+  }
+});
+
 export default router;

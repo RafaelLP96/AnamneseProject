@@ -7,14 +7,14 @@
 
 body {
   font-family: Arial, sans-serif;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  background-color: #e4e4e4;
 }
 
 /* ================ LAYOUT PRINCIPAL ================ */
 .layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
 }
 
 /* ================ SIDEBAR (Menu Lateral) ================ */
@@ -282,12 +282,29 @@ body {
 /* ================ TOPBAR ================ */
 .topbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
   padding: 15px;
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.topbar .menu-toggle {
+  background-color: rgba(1, 99, 161, 0.08);
+  border: 1px solid rgba(1, 99, 161, 0.2);
+  color: #0163a1;
+  position: relative;
+  z-index: 1;
+}
+
+.topbar .menu-toggle:hover {
+  background-color: rgba(1, 99, 161, 0.14);
+}
+
+.topbar .hamburger .bar {
+  background-color: #0163a1;
 }
 
 .user-info {
@@ -694,22 +711,68 @@ tr:hover {
 }
 
 /* ================ RESPONSIVIDADE ================ */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .sidebar {
+    width: 260px;
+  }
+
+  .content {
+    padding: 20px 24px;
+  }
+
+  .card {
+    padding: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .layout {
+    min-height: auto;
+  }
+
+  .sidebar,
+  .sidebar.collapsed {
     position: fixed;
     left: 0;
     top: 0;
     height: 100vh;
-    z-index: 999;
+    z-index: 1002;
     transform: translateX(-100%);
+    width: 280px;
+    padding: 20px 10px;
   }
 
   .sidebar.open {
     transform: translateX(0);
   }
 
+  .sidebar.collapsed .logo-text,
+  .sidebar.collapsed .nav-label,
+  .sidebar.collapsed .btn-label {
+    display: inline-block;
+    opacity: 1;
+    width: auto;
+    text-align: left;
+    font-size: 14px;
+  }
+
+  .sidebar.collapsed .nav-btn,
+  .sidebar.collapsed .menu-btn {
+    justify-content: flex-start;
+    padding: 14px 16px;
+    flex-direction: row;
+    gap: 10px;
+    min-height: auto;
+  }
+
   .content {
     margin-left: 0;
+    padding: 18px 18px 24px;
+    overflow-x: hidden;
+  }
+
+  .topbar {
+    margin-bottom: 16px;
   }
 
   .modal-content {
@@ -721,6 +784,18 @@ tr:hover {
     padding: 10px 16px;
     font-size: 14px;
     margin-left: 5px;
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  th,
+  td {
+    white-space: nowrap;
   }
 }
 
