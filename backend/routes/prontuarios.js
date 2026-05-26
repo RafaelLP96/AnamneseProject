@@ -327,4 +327,36 @@ router.get('/:id/fotos', async (req, res) => {
   }
 });
 
+// DELETE /prontuarios/:id
+router.delete('/:id', async (req, res) => {
+  try {
+    const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
+    if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
+    if (prontuario.registrado_por !== req.usuario.id)
+      return res.status(403).json({ erro: 'Acesso negado' });
+
+    const dados = prontuario.dados || {};
+    const fotos = Array.isArray(dados.fotos) ? dados.fotos : [];
+
+    // Remover arquivos do storage (se existirem)
+    try {
+      const caminhos = fotos.map(f => f.caminho).filter(Boolean);
+      if (caminhos.length) {
+        const { error } = await supabase.storage.from('fotos-prontuarios').remove(caminhos);
+        if (error) console.warn('Erro ao remover arquivos do storage:', error.message || error);
+      }
+    } catch (err) {
+      console.warn('Erro ao remover fotos do storage:', err);
+    }
+
+    // Deletar registro do banco
+    await prisma.prontuarios.delete({ where: { id: prontuario.id } });
+
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error('Erro ao excluir prontuário:', err);
+    res.status(500).json({ erro: 'Erro ao excluir prontuário' });
+  }
+});
+
 export default router;
