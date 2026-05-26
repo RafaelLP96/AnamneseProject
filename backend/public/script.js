@@ -303,9 +303,11 @@ async function salvarFormulario(e) {
 
     if (isUpdate) {
       mostrarNotificacao('Prontuário atualizado com sucesso.', 'sucesso');
-      // limpar estado de edição e remover id da URL para evitar confusão
+      // limpar estado de edição e abrir um novo formulário em branco
       editingId = null;
       try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+      window.location.href = window.location.pathname;
+      return;
     } else {
       mostrarNotificacao('Prontuário enviado com sucesso.', 'sucesso');
     }
@@ -377,6 +379,7 @@ async function mostrarFormulariosEnviados() {
                 ${p.identidade_genero ? `<div>${p.identidade_genero}</div>` : ''}
               </div>
               <div class="form-item-actions">
+                <button class="form-action-btn edit-btn" data-id="${p.id}" title="Editar">✏️</button>
                 <button class="form-action-btn print-btn" data-id="${p.id}" title="Imprimir">🖨️</button>
                 <button class="form-action-btn pdf-btn" data-id="${p.id}" title="Baixar PDF">📄</button>
                 <button class="form-action-btn delete-btn" data-id="${p.id}" title="Excluir">🗑️</button>
@@ -438,6 +441,17 @@ async function mostrarFormulariosEnviados() {
         } catch (err) {
           console.error(err);
           mostrarNotificacao('Erro ao gerar PDF.', 'erro');
+        }
+      });
+    });
+
+    modalBody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        if (id) {
+          fecharFormulariosEnviados();
+          window.location.href = `/formulario.html?id=${id}`;
         }
       });
     });
