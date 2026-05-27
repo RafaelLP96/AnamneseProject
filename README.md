@@ -96,4 +96,4 @@ O front-end público está servido em `backend/public`.
 
 ## Status
 
-🚧 Em desenvolvimento.
+✅ Concluído 
