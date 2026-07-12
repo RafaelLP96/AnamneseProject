@@ -261,7 +261,7 @@ async function salvarFormulario(e) {
   try {
     const isUpdate = !!editingId;
     const endpoint = isUpdate ? `${window.location.origin}/prontuarios/${editingId}` : `${window.location.origin}/prontuarios`;
-    const method = isUpdate ? 'PUT' : 'POST';
+   const method = isUpdate ? 'PATCH' : 'POST';
     const res = await fetch(endpoint, {
       method,
       headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: `Bearer ${token}` } : {}),
@@ -303,10 +303,9 @@ async function salvarFormulario(e) {
 
     if (isUpdate) {
       mostrarNotificacao('Prontuário atualizado com sucesso.', 'sucesso');
-      // limpar estado de edição e abrir um novo formulário em branco
       editingId = null;
       try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
-      window.location.href = window.location.pathname;
+      setTimeout(() => { window.location.href = window.location.pathname; }, 1500);
       return;
     } else {
       mostrarNotificacao('Prontuário enviado com sucesso.', 'sucesso');
@@ -420,6 +419,15 @@ async function mostrarFormulariosEnviados() {
         }
       });
     });
+
+    modalBody.querySelectorAll('.edit-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = btn.dataset.id;
+    fecharFormulariosEnviados();
+    window.location.href = `/formulario.html?id=${id}`;
+  });
+});
 
     modalBody.querySelectorAll('.pdf-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {

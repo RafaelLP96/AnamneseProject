@@ -8,13 +8,18 @@ const prisma = new PrismaClient();
 
 // POST /auth/cadastro
 router.post('/cadastro', async (req, res) => {
-  const { nome, username, senha } = req.body;
+  const nome = String(req.body?.nome ?? '').trim();
+  const username = String(req.body?.username ?? '').trim();
+  const senha = String(req.body?.senha ?? '');
 
   if (!nome || !username || !senha)
     return res.status(400).json({ erro: 'Preencha todos os campos' });
 
   if (senha.length < 6)
     return res.status(400).json({ erro: 'A senha precisa ter pelo menos 6 caracteres' });
+
+  if (username.length < 3)
+    return res.status(400).json({ erro: 'O username precisa ter pelo menos 3 caracteres' });
 
   try {
     const existe = await prisma.usuarios.findUnique({ where: { username } });
@@ -30,14 +35,15 @@ router.post('/cadastro', async (req, res) => {
 
     res.status(201).json(usuario);
   } catch (err) {
-    console.error(err);
+    console.error('Erro ao cadastrar usuário');
     res.status(500).json({ erro: 'Erro ao cadastrar usuário' });
   }
 });
 
 // POST /auth/login
 router.post('/login', async (req, res) => {
-  const { username, senha } = req.body;
+  const username = String(req.body?.username ?? '').trim();
+  const senha = String(req.body?.senha ?? '');
 
   if (!username || !senha)
     return res.status(400).json({ erro: 'Preencha todos os campos' });
@@ -65,7 +71,7 @@ router.post('/login', async (req, res) => {
       usuario: { id: usuario.id, nome: usuario.nome, username: usuario.username }
     });
   } catch (err) {
-    console.error(err);
+    console.error('Erro ao fazer login');
     res.status(500).json({ erro: 'Erro ao fazer login' });
   }
 });

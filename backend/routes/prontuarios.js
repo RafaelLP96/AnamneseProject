@@ -6,17 +6,26 @@ import supabase from '../src/storage.js';
 
 const prisma  = new PrismaClient();
 const router  = express.Router();
-const upload  = multer({ storage: multer.memoryStorage() });
+const upload  = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (tiposPermitidos.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Tipo de arquivo não permitido'));
+    }
+  }
+});
 
 // POST /prontuarios
 router.post('/', async (req, res) => {
   const { nome_social, identidade_genero, data_consulta, data_proxima_consulta, dados } = req.body;
 
-  console.log('POST /prontuarios:');
-  console.log('- usuario.id:', req.usuario?.id);
-  console.log('- nome_social:', nome_social);
-  console.log('- identidade_genero:', identidade_genero);
-  console.log('- data_consulta:', data_consulta);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('POST /prontuarios recebido');
+  }
 
   if (!nome_social || !data_consulta)
     return res.status(400).json({ erro: 'nome_social e data_consulta são obrigatórios' });
@@ -33,10 +42,9 @@ router.post('/', async (req, res) => {
       }
     });
 
-    console.log('- Prontuário criado com ID:', prontuario.id);
     res.status(201).json(prontuario);
   } catch (err) {
-    console.error('- Erro ao salvar:', err);
+    console.error('Erro ao salvar prontuário');
     res.status(500).json({ erro: 'Erro ao salvar prontuário' });
   }
 });
@@ -44,8 +52,6 @@ router.post('/', async (req, res) => {
 // GET /prontuarios — lista prontuários do usuário logado
 router.get('/', async (req, res) => {
   try {
-    console.log('GET /prontuarios - usuario.id:', req.usuario?.id);
-
     const prontuarios = await prisma.prontuarios.findMany({
       where: { registrado_por: req.usuario.id },
       orderBy: { data_consulta: 'desc' },
@@ -59,10 +65,9 @@ router.get('/', async (req, res) => {
       }
     });
 
-    console.log('Prontuários encontrados:', prontuarios.length);
     res.json(prontuarios);
   } catch (err) {
-    console.error('Erro ao buscar prontuários:', err);
+    console.error('Erro ao buscar prontuários');
     res.status(500).json({ erro: 'Erro ao buscar prontuários' });
   }
 });
@@ -239,7 +244,14 @@ router.get('/:id/pdf', async (req, res) => {
 });
 
 // POST /prontuarios/:id/fotos
-router.post('/:id/fotos', upload.single('foto'), async (req, res) => {
+router.post('/:id/fotos', (req, res, next) => {
+  upload.single('foto')(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ erro: err.message || 'Upload inválido' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const prontuario = await prisma.prontuarios.findUnique({ where: { id: req.params.id } });
     if (!prontuario) return res.status(404).json({ erro: 'Prontuário não encontrado' });
